@@ -24,7 +24,7 @@ router.get('/info', (req, res) => {
 
 // POST: Create user
 router.post('/register', (req, res) => {
-  user.create(req.body, function(result) {
+  user.create(req.body, (result) => {
     res.status(result.status).json(result);
   });
 });

@@ -201,3 +201,114 @@ describe('UC-202', function () {
 
   });
 });
+
+describe('UC-203', function () {
+  it('TC-203-2 User is logged in with valid token', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'd.elenbaas1@student.avans.nl',
+        'password': 'abc123'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .get('/api/user/profile')
+          .set('Authorization', res.body.data.token)
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(200);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            let { data } = res.body;
+            data.should.be.an('object');
+            data.should.has.property('id');
+            data.should.has.property('firstName');
+            data.should.has.property('lastName');
+            data.should.has.property('street');
+            data.should.has.property('city');
+            data.should.has.property('isActive');
+            data.should.has.property('emailAddress');
+            data.should.has.property('password');
+            data.should.has.property('phoneNumber');
+
+            done();
+          })
+      })
+
+  });
+});
+
+describe('UC-204', function () {
+  it('TC-204-3 User id exists', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'd.elenbaas1@student.avans.nl',
+        'password': 'abc123'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .get(`/api/user/2`)
+          .set('Authorization', res.body.data.token)
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(200);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            let { data } = res.body;
+            data.should.be.an('object');
+            data.should.has.property('id');
+            data.should.has.property('firstName');
+            data.should.has.property('lastName');
+            data.should.has.property('street');
+            data.should.has.property('city');
+            data.should.has.property('isActive');
+            data.should.has.property('emailAddress');
+            data.should.has.property('password');
+            data.should.has.property('phoneNumber');
+
+            done();
+          })
+      })
+
+  });
+});
+
+describe('UC-206', function () {
+  // TODO: Make this cleaner, too much nested and duplicate code
+  // it('TC-206-4 User is successful verwijderd', (done) => {
+  //   chai
+  //     .request(server)
+  //     .post('/api/register')
+  //     .send({
+  //       'firstName': 'Damian',
+  //       'lastName': 'Elenbaas',
+  //       'street': 'Lovensdijkstraat 61',
+  //       'city': 'Breda',
+  //       'isActive': true,
+  //       'emailAddress': 'test@example.com',
+  //       'password': '123',
+  //       'phoneNumber': '12456789'
+  //     })
+  //     .end((err, res) => {
+  //       assert(err === null);
+  //       res.body.should.be.an('object');
+  //       res.body.should.has.property('status').to.be.equal(200);
+  //       res.body.should.has.property('message');
+  //       res.body.should.has.property('data');
+  //       let { data } = res.body;
+  //       data.should.be.an('object');
+  //       data.should.has.property('id');
+  //       let id = data.id;
+  //       
+  //
+  //       done();
+  //     })
+  // });
+});
