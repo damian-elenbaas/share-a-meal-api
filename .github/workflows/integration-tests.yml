@@ -3,7 +3,7 @@ name: Run the integration tests
 on:
     push:
         # branches:
-            - main
+            # - main
 
 jobs:
     integrationtests:
