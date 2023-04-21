@@ -7,6 +7,7 @@ const user = require('./routes/user');
 app.use('/api', api);
 app.use('/api/user', user);
 app.use('*', (req, res) => {
+  console.log(`[*] Invalid Endpoint`);
   res.status(404).json({
     'status': 404,
     'message': 'Endpoint not found',

@@ -5,12 +5,14 @@ const user = require('../data/user');
 router.use(express.json());
 
 router.post('/login', (req, res) => {
+  console.log(`[POST] /api/login`);
   user.login(req.body, (result) => {
     res.status(result.status).json(result);
   })
 })
 
 router.get('/info', (req, res) => {
+  console.log(`[GET] /api/info`);
   res.status(200).json({
     'status': 200,
     'message': 'Server info-endpoint',
@@ -24,6 +26,7 @@ router.get('/info', (req, res) => {
 
 // POST: Create user
 router.post('/register', (req, res) => {
+  console.log(`[POST] /api/register`);
   user.create(req.body, (result) => {
     res.status(result.status).json(result);
   });

@@ -6,11 +6,13 @@ router.use(express.json());
 
 // PUT: Update logged in user
 router.put('/:userid', (req, res) => {
+  console.log(`[PUT] /api/user/${req.params.userid}`);
   res.send('/user PUT request received');
 });
 
 // DELETE: Delete logged in user
 router.delete('/:userid', (req, res) => {
+  console.log(`[DELETE] /api/user/${req.params.userid}`);
   let token = req.get('Authorization');
   if(token == undefined) {
     sendAuthorizationError(res);
@@ -26,6 +28,7 @@ router.delete('/:userid', (req, res) => {
 
 // GET: Get logged in user
 router.get('/profile', (req, res) => {
+  console.log(`[GET] /api/user/profile`);
   let token = req.get('Authorization');
   if(token == undefined) {
     sendAuthorizationError(res);
@@ -39,6 +42,7 @@ router.get('/profile', (req, res) => {
 
 // GET: Get all users
 router.get('/', (req, res) => {
+  console.log(`[GET] /api/user/`);
   let token = req.get('Authorization');
   if(token == undefined) {
     sendAuthorizationError(res);
@@ -60,6 +64,7 @@ router.get('/', (req, res) => {
 
 // GET: Get user profile by id
 router.get('/:userid', (req, res) => {
+  console.log(`[GET] /api/user/${req.params.userid}`);
   let token = req.get('Authorization');
   if(token == undefined) {
     sendAuthorizationError(res);
