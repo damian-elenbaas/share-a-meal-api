@@ -25,7 +25,12 @@ let dummyUserData = [
 
 let user = {};
 
-// Create a new user
+/**
+ * Function that creates a new user
+ *
+ * @param {object} body - body that contains emailAddress, firstName, lastName, street, city, isActive, password and phoneNumber
+ * @param {Function} callback - callback that handles response
+ */
 user.create = function (body, callback) {
   let result = {};
 
@@ -92,6 +97,13 @@ user.create = function (body, callback) {
   callback(result);
 }
 
+/**
+ * Function that gets all existing users with setted filter options
+ *
+ * @param {string} token - token of logged in user
+ * @param {object} query - object that can contain fitler properties
+ * @param {Function} callback - callback that handles response
+ */
 user.getAll = function (token, query, callback) {
   let result = {};
 
@@ -146,6 +158,12 @@ user.getAll = function (token, query, callback) {
   callback(result);
 }
 
+/**
+ * Function that logs in user
+ *
+ * @param {object} credentials - object that contains emailAddress and password
+ * @param {Function} callback - callback function that handles response
+ */
 user.login = function (credentials, callback) {
   let result = {};
 
@@ -196,6 +214,12 @@ user.login = function (credentials, callback) {
   return;
 }
 
+/**
+ * Function that checks if given token is valid
+ *
+ * @param {string} token - token of logged in user
+ * @returns {boolean} isValid
+ */
 user.isTokenValid = function (token) {
   const filtered = dummyUserData.filter(
     item => item.token == token
@@ -203,6 +227,12 @@ user.isTokenValid = function (token) {
   return filtered.length != 0;
 }
 
+/**
+ * Function that gets user by given token
+ *
+ * @param {string} token - token of logged in user
+ * @param {Function} callback - callback that handles response
+ */
 user.getByToken = function (token, callback) {
   let result = {};
 
@@ -223,6 +253,13 @@ user.getByToken = function (token, callback) {
   callback(result);
 }
 
+/**
+ * Function that gets user by given id
+ *
+ * @param {string} token - token of logged in user
+ * @param {number} id - id of user
+ * @param {Function} callback - callback that handles response
+ */
 user.getById = function (token, id, callback) {
   let result = {};
 
@@ -243,8 +280,8 @@ user.getById = function (token, id, callback) {
     result.message = "User not found";
     result.data = {}; 
   } else {
-    // delete user.password;
-    // delete user.token;
+    delete user.password;
+    delete user.token;
     
     result.status = 200;
     result.message = "User succesfully found";
@@ -254,6 +291,12 @@ user.getById = function (token, id, callback) {
   callback(result);
 }
 
+/**
+ * Deletes user with given id
+ * @param {string} token - Token of logged in user
+ * @param {number} userid - id of user you want to delete
+ * @param {Function} callback - callback that handles the response 
+  */
 user.delete = function (token, userid, callback) {
   let result = {};
 
@@ -293,6 +336,12 @@ user.delete = function (token, userid, callback) {
   callback(result);
 }
 
+/**
+ * Function that validates email address
+ *
+ * @param {string} email
+ * @returns {boolean} isValid
+ */
 const validateEmail = (email) => {
   return String(email)
     .toLowerCase()
@@ -301,10 +350,22 @@ const validateEmail = (email) => {
     );
 };
 
+/**
+ * Function that validates password 
+ *
+ * @param {string} password
+ * @returns {boolean} isValid
+ */
 const validatePassword = (password) => {
   return String(password).length > 0;
 }
 
+/**
+ * Function that generates a random string 
+ *
+ * @param {number} length 
+ * @returns {boolean} isValid
+ */
 const generateRandomString = (length) => {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
