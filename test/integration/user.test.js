@@ -11,7 +11,7 @@ chai.use(require('chai-like'));
 chai.use(require('chai-things'));
 
 describe('UC-201', function () {
-  it('TC-201-1 Required field is missing', (done) => {
+  it('TC-201-1 - Required field is missing', (done) => {
     chai
       .request(server)
       .post('/api/register')
@@ -42,7 +42,7 @@ describe('UC-201', function () {
       })
   });
 
-  it('TC-201-2 Not a valid email address', function (done) {
+  it('TC-201-2 - Not a valid email address', function (done) {
     chai
       .request(server)
       .post('/api/register')
@@ -73,7 +73,7 @@ describe('UC-201', function () {
       })
   });
 
-  it('TC-201-3 Not a valid password', function (done) {
+  it('TC-201-3 - Not a valid password', function (done) {
     chai
       .request(server)
       .post('/api/register')
@@ -104,7 +104,7 @@ describe('UC-201', function () {
       })
   });
 
-  it('TC-201-4 User already exists', function (done) {
+  it('TC-201-4 - User already exists', function (done) {
     chai
       .request(server)
       .post('/api/register')
@@ -135,7 +135,7 @@ describe('UC-201', function () {
       })
   });
 
-  it('TC-201-5 User successfuly registered', function (done) {
+  it('TC-201-5 - User successfuly registered', function (done) {
     chai
       .request(server)
       .post('/api/register')
@@ -177,7 +177,7 @@ describe('UC-201', function () {
 
 
 describe('UC-202', function () {
-  it('TC-202-1 Show all users', (done) => {
+  it('TC-202-1 - Show all users', (done) => {
     chai
       .request(server)
       .post('/api/login')
@@ -207,7 +207,7 @@ describe('UC-202', function () {
 });
 
 describe('UC-203', function () {
-  it('TC-203-2 User is logged in with valid token', (done) => {
+  it('TC-203-2 - User is logged in with valid token', (done) => {
     chai
       .request(server)
       .post('/api/login')
@@ -246,7 +246,7 @@ describe('UC-203', function () {
 });
 
 describe('UC-204', function () {
-  it('TC-204-3 User id exists', (done) => {
+  it('TC-204-3 - User id exists', (done) => {
     chai
       .request(server)
       .post('/api/login')
@@ -285,7 +285,7 @@ describe('UC-204', function () {
 });
 
 describe('UC-206', function () {
-  it('TC-206-4 User is successfully deleted', (done) => {
+  it('TC-206-4 - User is successfully deleted', (done) => {
     let emailAddress = 'test2@example.com';
     let password = '123';
     let id, token;
