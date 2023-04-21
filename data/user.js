@@ -280,8 +280,8 @@ user.getById = function (token, id, callback) {
     result.message = "User not found";
     result.data = {}; 
   } else {
-    delete user.password;
-    delete user.token;
+    // delete user.password;
+    // delete user.token;
     
     result.status = 200;
     result.message = "User succesfully found";
