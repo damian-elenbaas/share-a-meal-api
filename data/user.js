@@ -1,4 +1,4 @@
-const dummyUserData = [
+let dummyUserData = [
   {
     'id': 1,
     'firstName': 'Damian',
@@ -27,7 +27,6 @@ let user = {};
 
 // Create a new user
 user.create = function (body, callback) {
-  let exists = false;
   let result = {};
 
   if(!(
@@ -63,13 +62,9 @@ user.create = function (body, callback) {
     return;
   }
 
-  dummyUserData.forEach((item) => {
-    if(item.emailAddress == body.emailAddress) {
-      exists = true;
-    }
-  }); 
+  let existingUser = dummyUserData.find((item) => item.emailAddress == body.emailAddress); 
 
-  if(exists) {
+  if(existingUser != undefined) {
     result.status = 403;
     result.message = 'User with specified email address already exists';
     result.data = {};
@@ -79,10 +74,10 @@ user.create = function (body, callback) {
 
   let lastId = dummyUserData[dummyUserData.length - 1].id;
   let newUser = {
-    "id": lastId + 1,
-    "firstName": body.firstName,
-    "lastName": body.lastName,
-    "street": body.street,
+    'id': lastId + 1,
+    'firstName': body.firstName,
+    'lastName': body.lastName,
+    'street': body.street,
     "city": body.city,
     "isActive": body.isActive,
     "emailAddress": body.emailAddress,
@@ -205,12 +200,7 @@ user.isTokenValid = function (token) {
   const filtered = dummyUserData.filter(
     item => item.token == token
   );
-
-  if(filtered.length == 0) {
-    return false;
-  } else {
-    return true;
-  }
+  return filtered.length != 0;
 }
 
 user.getByToken = function (token, callback) {
@@ -244,25 +234,62 @@ user.getById = function (token, id, callback) {
     return;
   }
 
-  let filtered = dummyUserData.filter(
+  let user = dummyUserData.find(
     item => item.id == id
   );
 
-  if(filtered.length == 0) {
+  if(user == undefined) {
     result.status = 404;
     result.message = "User not found";
     result.data = {}; 
   } else {
-    let user = filtered[0];
-
     // delete user.password;
     // delete user.token;
-
+    
     result.status = 200;
     result.message = "User succesfully found";
     result.data = user;
   }
 
+  callback(result);
+}
+
+user.delete = function (token, userid, callback) {
+  let result = {};
+
+  if(!this.isTokenValid(token)) {
+    result.status = 401;
+    result.message = 'Invalid token';
+    result.data = {}; 
+    callback(result);
+    return;
+  }
+
+  let user = dummyUserData.find(
+    item => item.id == userid 
+  );
+
+  if(user == undefined) {
+    result.status = 404;
+    result.message = `User with ID ${userid} is not found`;
+    result.data = {}; 
+    callback(result);
+    return;
+  }
+
+  if(user.token != token) {
+    result.status = 403;
+    result.message = `You are not the owner of user with ID ${userid}`;
+    result.data = {}; 
+    callback(result);
+    return;
+  }
+
+  dummyUserData = dummyUserData.filter(item => item.id != userid);
+
+  result.status = 200;
+  result.message = `User with ID ${userid} is deleted`;
+  result.data = {}; 
   callback(result);
 }
 

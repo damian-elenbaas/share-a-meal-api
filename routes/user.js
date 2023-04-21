@@ -10,8 +10,18 @@ router.put('/:userid', (req, res) => {
 });
 
 // DELETE: Delete logged in user
-router.delete('/', (req, res) => {
-  res.send('/user DELETE request received');
+router.delete('/:userid', (req, res) => {
+  let token = req.get('Authorization');
+  if(token == undefined) {
+    sendAuthorizationError(res);
+    return;
+  }
+
+  let id = req.params.userid;
+
+  user.delete(token, id, (response) => {
+    res.status(response.status).json(response);
+  })
 });
 
 // GET: Get logged in user

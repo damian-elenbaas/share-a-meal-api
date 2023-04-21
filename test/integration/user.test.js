@@ -1,10 +1,14 @@
 var assert = require('assert');
+const { expect } = require('chai');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../app');
 
 chai.should();
 chai.use(chaiHttp);
+
+chai.use(require('chai-like'));
+chai.use(require('chai-things'));
 
 describe('UC-201', function () {
   it('TC-201-1 Required field is missing', (done) => {
@@ -281,34 +285,69 @@ describe('UC-204', function () {
 });
 
 describe('UC-206', function () {
-  // TODO: Make this cleaner, too much nested and duplicate code
-  // it('TC-206-4 User is successful verwijderd', (done) => {
-  //   chai
-  //     .request(server)
-  //     .post('/api/register')
-  //     .send({
-  //       'firstName': 'Damian',
-  //       'lastName': 'Elenbaas',
-  //       'street': 'Lovensdijkstraat 61',
-  //       'city': 'Breda',
-  //       'isActive': true,
-  //       'emailAddress': 'test@example.com',
-  //       'password': '123',
-  //       'phoneNumber': '12456789'
-  //     })
-  //     .end((err, res) => {
-  //       assert(err === null);
-  //       res.body.should.be.an('object');
-  //       res.body.should.has.property('status').to.be.equal(200);
-  //       res.body.should.has.property('message');
-  //       res.body.should.has.property('data');
-  //       let { data } = res.body;
-  //       data.should.be.an('object');
-  //       data.should.has.property('id');
-  //       let id = data.id;
-  //       
-  //
-  //       done();
-  //     })
-  // });
+  it('TC-206-4 User is successfully deleted', (done) => {
+    let emailAddress = 'test2@example.com';
+    let password = '123';
+    let id, token;
+
+    chai.request(server)
+      .post('/api/register')
+      .send({
+        'firstName': 'Damian',
+        'lastName': 'Elenbaas',
+        'street': 'Lovensdijkstraat 61',
+        'city': 'Breda',
+        'isActive': true,
+        'emailAddress': emailAddress,
+        'password': password,
+        'phoneNumber': '12456789'
+      })
+      .then(res => {
+        assert(res.body.status === 201);
+        assert(res.body.data.id);
+        id = res.body.data.id;
+        return chai.request(server)
+          .post('/api/login')
+          .send({
+            'emailAddress': emailAddress,
+            'password': password
+          });
+      })
+      .then(res => {
+        token = res.body.data.token;
+        return chai.request(server)
+          .get('/api/user')
+          .set('Authorization', token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
+        return chai.request(server)
+          .delete(`/api/user/${id}`)
+          .set('Authorization', token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        return chai.request(server)
+          .post('/api/login')
+          .send({
+            'emailAddress': 'd.elenbaas1@student.avans.nl',
+            'password': 'abc123'
+          });
+      })
+      .then(res => {
+        return chai.request(server)
+          .get('/api/user')
+          .set('Authorization', res.body.data.token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
+        done();
+      })
+      .catch(err => {
+        done(err);
+      });
+  });
 });
+
