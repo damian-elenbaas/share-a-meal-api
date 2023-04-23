@@ -147,10 +147,12 @@ user.getAll = function (token, query, callback) {
     result.data = dummyUserData;
   }
 
-  // FILTER CREDENTIALS
+  // Doens't work without copy: removes password and token permanently because of reference to dummyUserData
+  // Dirty hack to make a copy without reference
+  result.data = JSON.parse(JSON.stringify(result.data));
   result.data = result.data.map((item) => {
-    // delete item.password;
-    // delete item.token;
+    delete item.password;
+    delete item.token;
 
     return item;
   })
@@ -280,8 +282,10 @@ user.getById = function (token, id, callback) {
     result.message = "User not found";
     result.data = {}; 
   } else {
-    // delete user.password;
-    // delete user.token;
+    // Dirty hack to make a copy without reference
+    user = JSON.parse(JSON.stringify(user));
+    delete user.password;
+    delete user.token;
     
     result.status = 200;
     result.message = "User succesfully found";

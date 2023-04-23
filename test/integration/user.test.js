@@ -274,7 +274,7 @@ describe('UC-204', function () {
             data.should.has.property('city');
             data.should.has.property('isActive');
             data.should.has.property('emailAddress');
-            data.should.has.property('password');
+            // data.should.has.property('password');
             data.should.has.property('phoneNumber');
 
             done();
