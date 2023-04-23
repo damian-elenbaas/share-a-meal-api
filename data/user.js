@@ -83,11 +83,11 @@ user.create = function (body, callback) {
     'firstName': body.firstName,
     'lastName': body.lastName,
     'street': body.street,
-    "city": body.city,
-    "isActive": body.isActive,
-    "emailAddress": body.emailAddress,
-    "password": body.password,
-    "phoneNumber": body.phoneNumber
+    'city': body.city,
+    'isActive': body.isActive,
+    'emailAddress': body.emailAddress,
+    'password': body.password,
+    'phoneNumber': body.phoneNumber
   };
   dummyUserData.push(newUser);
 
@@ -110,20 +110,13 @@ user.getAll = function (token, query, callback) {
   const filteredUsers = dummyUserData.filter(item => item.hasOwnProperty('token') && item.token == token);
   if(filteredUsers.length == 0) {
     result.status = 401;
-    result.message = "Invalid token";
+    result.message = 'Invalid token';
     result.data = {};
     callback(result);
     return;
   }
 
-  if(query.hasOwnProperty('isActive')) {
-    const filteredData = dummyUserData.filter(
-      item => item.isActive === query.isActive
-    );
-    result.status = 200;
-    result.message = 'All users';
-    result.data = filteredData;
-  } else if(Object.keys(query).length > 0){
+  if(Object.keys(query).length > 0){
     let data = dummyUserData;
 
     for (const [key, value] of Object.entries(query)) {
@@ -134,8 +127,13 @@ user.getAll = function (token, query, callback) {
         callback(result);
         return;
       }
-
-      data = data.filter(item => item[key].includes(value));
+      data = data.filter(item => {
+        if(typeof item[`${key}`] === 'boolean') {
+          return item[`${key}`] === JSON.parse(value);
+        } else {
+          return item[`${key}`].toLowerCase().includes(value.toLowerCase());
+        }
+      });
     }
 
     result.status = 200;
