@@ -8,7 +8,7 @@ let dummyUserData = [
     'isActive': true,
     'emailAddress': 'd.elenbaas1@student.avans.nl',
     'password': 'abc123',
-    'phoneNumber': '1234124142',
+    'phoneNumber': '+31123456789',
   },
   {
     'id': 2,
@@ -19,7 +19,7 @@ let dummyUserData = [
     'isActive': true,
     'emailAddress': 'j.vandijk@live.nl',
     'password': 'werwetq',
-    'phoneNumber': '254757368',
+    'phoneNumber': '+31987654321',
   }
 ];
 
@@ -34,18 +34,9 @@ let user = {};
 user.create = function (body, callback) {
   let result = {};
 
-  if(!(
-    body.hasOwnProperty('emailAddress') &&
-    body.hasOwnProperty('firstName') &&
-    body.hasOwnProperty('lastName') &&
-    body.hasOwnProperty('street') &&
-    body.hasOwnProperty('city') &&
-    body.hasOwnProperty('isActive') &&
-    body.hasOwnProperty('password') &&
-    body.hasOwnProperty('phoneNumber')
-  )) {
+  if(!isUserObjectValid(body)) {
     result.status = 400;
-    result.message = 'Bad request. Not all required properties specified';
+    result.message = 'Bad request. Not all required properties are specified';
     result.data = {};
     callback(result);
     return;
@@ -54,6 +45,14 @@ user.create = function (body, callback) {
   if(!validateEmail(body.emailAddress)) {
     result.status = 400;
     result.message = 'Bad request. Invalid email address';
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  if(!validatePhoneNumber(body.phoneNumber)) {
+    result.status = 400;
+    result.message = "Bad Request. Invalid phone number";
     result.data = {};
     callback(result);
     return;
@@ -215,6 +214,105 @@ user.login = function (credentials, callback) {
 }
 
 /**
+ * Function that updates user information
+ * 
+ * @param {string} token - token of logged in user
+ * @param {number} userid - id of user you want to update
+ * @param {Object} updatedUser - user body with new data
+ * @param {Function} callback - callback function that handles response
+ */
+user.update = function (token, userid, updatedUser, callback) {
+  let result = {};
+
+  if(!this.isTokenValid(token)) {
+    result.status = 401;
+    result.message = "Invalid token";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  let user = dummyUserData.find(item => item.id == userid);
+
+  if(user === undefined) {
+    result.status = 404;
+    result.message = "User not found";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  if(!(user.hasOwnProperty('token') && user.token === token)) {
+    result.status = 403;
+    result.message = "You are not the owner of the user";
+    result.data = {};
+    callback(result);
+    return;
+  } 
+
+  if(!isUserObjectValid(updatedUser)) { 
+    result.status = 400;
+    result.message = "Bad Request. Not all required properties are specified";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  if(!validateEmail(updatedUser.emailAddress)) {
+    result.status = 400;
+    result.message = "Bad Request. Invalid email address";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  if(!validatePhoneNumber(updatedUser.phoneNumber)) {
+    result.status = 400;
+    result.message = "Bad Request. Invalid phone number";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  if(!validatePassword(updatedUser.password)) {
+    result.status = 400;
+    result.message = "Bad Request. Invalid password";
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  let existingUser = dummyUserData.find(
+    (item) => (
+      item.emailAddress == updatedUser.emailAddress && 
+      item.id != userid
+    )
+  ); 
+
+  if(existingUser != undefined) {
+    result.status = 403;
+    result.message = 'User with specified email address already exists';
+    result.data = {};
+    callback(result);
+    return;
+  }
+
+  user.firstName = updatedUser.firstName;
+  user.lastName = updatedUser.lastName;
+  user.street = updatedUser.street;
+  user.city = updatedUser.city;
+  user.isActive = updatedUser.isActive;
+  user.emailAddress = updatedUser.emailAddress;
+  user.password = updatedUser.password;
+  user.phoneNumber = updatedUser.phoneNumber;
+
+  result.status = 200;
+  result.message = "User successfully updated";
+  result.data = user; 
+  callback(result);
+}
+
+/**
  * Function that checks if given token is valid
  *
  * @param {string} token - token of logged in user
@@ -360,6 +458,36 @@ const validateEmail = (email) => {
  */
 const validatePassword = (password) => {
   return String(password).length > 0;
+}
+
+/**
+ * Function that validates phone number
+ *
+ * @param {string} password
+ * @returns {boolean} isValid
+ */
+const validatePhoneNumber = (phoneNumber) => {
+  // regular expression to match a valid mobile phone number
+  const regex = /^\+?\d{1,3}?\d{9}$/;
+
+  // remove whitespace from phone number
+  phoneNumber = phoneNumber.replace(/\s/g, '');
+
+  // check if the input matches the regular expression
+  return regex.test(phoneNumber);
+}
+
+const isUserObjectValid = (user) => {
+  return (
+    user.hasOwnProperty('emailAddress') &&
+    user.hasOwnProperty('firstName') &&
+    user.hasOwnProperty('lastName') &&
+    user.hasOwnProperty('street') &&
+    user.hasOwnProperty('city') &&
+    user.hasOwnProperty('isActive') &&
+    user.hasOwnProperty('password') &&
+    user.hasOwnProperty('phoneNumber')
+  );
 }
 
 /**

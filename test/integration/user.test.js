@@ -23,7 +23,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'test@example.com',
         'password': '123',
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
         assert(err === null);
@@ -31,7 +31,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(400);
         res.body.should.has.property('message')
-          .to.be.equal('Bad request. Not all required properties specified');
+          .to.be.equal('Bad request. Not all required properties are specified');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -54,7 +54,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'testexample.com',
         'password': '123',
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
         assert(err === null);
@@ -85,7 +85,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'test@example.com',
         'password': '',
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
         assert(err === null);
@@ -116,7 +116,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'd.elenbaas1@student.avans.nl',
         'password': '123',
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
         assert(err === null);
@@ -147,7 +147,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'test@example.com',
         'password': '123',
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
         assert(err === null);
@@ -300,7 +300,7 @@ describe('UC-206', function () {
         'isActive': true,
         'emailAddress': emailAddress,
         'password': password,
-        'phoneNumber': '12456789'
+        'phoneNumber': '+31123456789'
       })
       .then(res => {
         assert(res.body.status === 201);

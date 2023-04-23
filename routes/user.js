@@ -7,7 +7,18 @@ router.use(express.json());
 // PUT: Update logged in user
 router.put('/:userid', (req, res) => {
   console.log(`[PUT] /api/user/${req.params.userid}`);
-  res.send('/user PUT request received');
+
+  let token = req.get('Authorization');
+  if(token == undefined) {
+    sendAuthorizationError(res);
+    return;
+  }
+
+  let id = req.params.userid;
+
+  user.update(token, id, req.body, (response) => {
+    res.status(response.status).json(response);
+  })
 });
 
 // DELETE: Delete logged in user
