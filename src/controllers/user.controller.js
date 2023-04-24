@@ -254,38 +254,11 @@ user.update = function (token, userid, updatedUser, callback) {
     callback(result);
     return;
   } 
-
-  if(!validators.isUserObjectValid(updatedUser)) { 
-    logger.debug('Not all properties specified');
+  
+  const validation = userSchema.validate(updatedUser);
+  if(validation.error) {
     result.status = 400;
-    result.message = "Bad Request. Not all required properties are specified";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validateEmail(updatedUser.emailAddress)) {
-    logger.debug('Invalid email address');
-    result.status = 400;
-    result.message = "Bad Request. Invalid email address";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePhoneNumber(updatedUser.phoneNumber)) {
-    logger.debug('Invalid phone number');
-    result.status = 400;
-    result.message = "Bad Request. Invalid phone number";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePassword(updatedUser.password)) {
-    logger.debug('Invalid password');
-    result.status = 400;
-    result.message = "Bad Request. Invalid password";
+    result.message = validation.error.details[0].message;
     result.data = {};
     callback(result);
     return;
