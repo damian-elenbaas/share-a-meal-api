@@ -91,6 +91,7 @@ router.get('/:userid', (req, res) => {
 });
 
 function sendAuthorizationError(res) {
+  logger.debug('Send authorization error');
   res.status(400).json({
     'status': 400,
     'message': 'Authorization header required',
