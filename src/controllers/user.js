@@ -1,31 +1,8 @@
 const logger = require('../utils/logger').logger;
+const validators = require('../utils/validators');
+const utils = require('../utils/utils');
 
-let database = {
-  users: [
-    {
-      'id': 1,
-      'firstName': 'Damian',
-      'lastName': 'Elenbaas',
-      'street': 'Lovensdijkstraat 61',
-      'city': 'Breda',
-      'isActive': true,
-      'emailAddress': 'd.elenbaas1@student.avans.nl',
-      'password': 'abc123',
-      'phoneNumber': '+31123456789',
-    },
-    {
-      'id': 2,
-      'firstName': 'Joost',
-      'lastName': 'van Dijk',
-      'street': 'De Ballen 2',
-      'city': 'Den Bosch',
-      'isActive': true,
-      'emailAddress': 'j.vandijk@live.nl',
-      'password': 'werwetq',
-      'phoneNumber': '+31987654321',
-    }
-  ]
-}
+let database = require('../utils/database');
 
 let user = {};
 
@@ -39,7 +16,7 @@ user.create = function (body, callback) {
   logger.info('Creating user');
   let result = {};
 
-  if(!isUserObjectValid(body)) {
+  if(!validators.isUserObjectValid(body)) {
     logger.debug('Invalid body');
     result.status = 400;
     result.message = 'Bad request. Not all required properties are specified';
@@ -48,7 +25,7 @@ user.create = function (body, callback) {
     return;
   }
 
-  if(!validateEmail(body.emailAddress)) {
+  if(!validators.validateEmail(body.emailAddress)) {
     logger.debug('Invalid email address');
     result.status = 400;
     result.message = 'Bad request. Invalid email address';
@@ -57,7 +34,7 @@ user.create = function (body, callback) {
     return;
   }
 
-  if(!validatePhoneNumber(body.phoneNumber)) {
+  if(!validators.validatePhoneNumber(body.phoneNumber)) {
     logger.debug('Invalid phone number');
     result.status = 400;
     result.message = 'Bad Request. Invalid phone number';
@@ -66,7 +43,7 @@ user.create = function (body, callback) {
     return;
   }
 
-  if(!validatePassword(body.password)) {
+  if(!validators.validatePassword(body.password)) {
     logger.debug('Invalid password');
     result.status = 400;
     result.message = 'Bad request. Invalid password';
@@ -215,7 +192,7 @@ user.login = function (credentials, callback) {
 
   if(user.password == credentials.password) {
     logger.debug('Credentials correct, generating token');
-    let token = generateRandomString(20);
+    let token = utils.generateRandomString(20);
     database.users.forEach((item) => {
       if(item.emailAddress == user.emailAddress) {
         item.token = token;
@@ -279,7 +256,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   } 
 
-  if(!isUserObjectValid(updatedUser)) { 
+  if(!validators.isUserObjectValid(updatedUser)) { 
     logger.debug('Not all properties specified');
     result.status = 400;
     result.message = "Bad Request. Not all required properties are specified";
@@ -288,7 +265,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  if(!validateEmail(updatedUser.emailAddress)) {
+  if(!validators.validateEmail(updatedUser.emailAddress)) {
     logger.debug('Invalid email address');
     result.status = 400;
     result.message = "Bad Request. Invalid email address";
@@ -297,7 +274,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  if(!validatePhoneNumber(updatedUser.phoneNumber)) {
+  if(!validators.validatePhoneNumber(updatedUser.phoneNumber)) {
     logger.debug('Invalid phone number');
     result.status = 400;
     result.message = "Bad Request. Invalid phone number";
@@ -306,7 +283,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  if(!validatePassword(updatedUser.password)) {
+  if(!validators.validatePassword(updatedUser.password)) {
     logger.debug('Invalid password');
     result.status = 400;
     result.message = "Bad Request. Invalid password";
@@ -485,80 +462,6 @@ user.delete = function (token, userid, callback) {
   callback(result);
 }
 
-/**
- * Function that validates email address
- *
- * @param {string} email
- * @returns {boolean} isValid
- */
-const validateEmail = (email) => {
-  logger.debug(`Validating email: ${email}`);
-  return String(email)
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    );
-};
-
-/**
- * Function that validates password 
- *
- * @param {string} password
- * @returns {boolean} isValid
- */
-const validatePassword = (password) => {
-  logger.debug(`Validating password: ${password}`);
-  return String(password).length > 0;
-}
-
-/**
- * Function that validates phone number
- *
- * @param {string} password
- * @returns {boolean} isValid
- */
-const validatePhoneNumber = (phoneNumber) => {
-  logger.debug(`Validating phone number: ${phoneNumber}`);
-
-  const regex = /^\+?\d{1,3}?\d{9}$/;
-
-  phoneNumber = phoneNumber.replace(/\s/g, '');
-
-  return regex.test(phoneNumber);
-}
-
-const isUserObjectValid = (user) => {
-  logger.debug(`Validating user object: ${user}`);
-  return (
-    user.hasOwnProperty('emailAddress') &&
-    user.hasOwnProperty('firstName') &&
-    user.hasOwnProperty('lastName') &&
-    user.hasOwnProperty('street') &&
-    user.hasOwnProperty('city') &&
-    user.hasOwnProperty('isActive') &&
-    user.hasOwnProperty('password') &&
-    user.hasOwnProperty('phoneNumber')
-  );
-}
-
-/**
- * Function that generates a random string 
- *
- * @param {number} length 
- * @returns {boolean} isValid
- */
-const generateRandomString = (length) => {
-  logger.debug('Generating string');
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-
-  for (let i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-
-  return result;
-}
 
 
 module.exports = user;
