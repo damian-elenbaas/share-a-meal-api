@@ -1,7 +1,7 @@
 const express = require('express');
 const logger = require('../utils/logger').logger;
 const router = express.Router();
-const user = require('../controllers/user');
+const user = require('../controllers/user.controller');
 
 router.use(express.json());
 
