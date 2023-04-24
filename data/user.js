@@ -1,29 +1,31 @@
 const logger = require('../utils/logger').logger;
 
-let dummyUserData = [
-  {
-    'id': 1,
-    'firstName': 'Damian',
-    'lastName': 'Elenbaas',
-    'street': 'Lovensdijkstraat 61',
-    'city': 'Breda',
-    'isActive': true,
-    'emailAddress': 'd.elenbaas1@student.avans.nl',
-    'password': 'abc123',
-    'phoneNumber': '+31123456789',
-  },
-  {
-    'id': 2,
-    'firstName': 'Joost',
-    'lastName': 'van Dijk',
-    'street': 'De Ballen 2',
-    'city': 'Den Bosch',
-    'isActive': true,
-    'emailAddress': 'j.vandijk@live.nl',
-    'password': 'werwetq',
-    'phoneNumber': '+31987654321',
-  }
-];
+let database = {
+  users: [
+    {
+      'id': 1,
+      'firstName': 'Damian',
+      'lastName': 'Elenbaas',
+      'street': 'Lovensdijkstraat 61',
+      'city': 'Breda',
+      'isActive': true,
+      'emailAddress': 'd.elenbaas1@student.avans.nl',
+      'password': 'abc123',
+      'phoneNumber': '+31123456789',
+    },
+    {
+      'id': 2,
+      'firstName': 'Joost',
+      'lastName': 'van Dijk',
+      'street': 'De Ballen 2',
+      'city': 'Den Bosch',
+      'isActive': true,
+      'emailAddress': 'j.vandijk@live.nl',
+      'password': 'werwetq',
+      'phoneNumber': '+31987654321',
+    }
+  ]
+}
 
 let user = {};
 
@@ -74,7 +76,7 @@ user.create = function (body, callback) {
   }
 
   logger.debug('Searching for existing user');
-  let existingUser = dummyUserData.find((item) => item.emailAddress == body.emailAddress); 
+  let existingUser = database.users.find((item) => item.emailAddress == body.emailAddress); 
 
   if(existingUser != undefined) {
     logger.debug('Email address already in use');
@@ -86,7 +88,7 @@ user.create = function (body, callback) {
   }
 
   logger.debug('Adding user to database');
-  let lastId = dummyUserData[dummyUserData.length - 1].id;
+  let lastId = database.users[database.users.length - 1].id;
   let newUser = {
     'id': lastId + 1,
     'firstName': body.firstName,
@@ -98,7 +100,7 @@ user.create = function (body, callback) {
     'password': body.password,
     'phoneNumber': body.phoneNumber
   };
-  dummyUserData.push(newUser);
+  database.users.push(newUser);
 
   result.status = 201;
   result.message = 'User succesfully registered';
@@ -117,7 +119,7 @@ user.getAll = function (token, query, callback) {
   logger.info('Getting all users')
   let result = {};
 
-  const filteredUsers = dummyUserData.filter(item => item.hasOwnProperty('token') && item.token == token);
+  const filteredUsers = database.users.filter(item => item.hasOwnProperty('token') && item.token == token);
   if(filteredUsers.length == 0) {
     logger.debug('Invalid token');
     result.status = 401;
@@ -130,7 +132,7 @@ user.getAll = function (token, query, callback) {
   logger.debug(`Query: ${query}`);
 
   if(Object.keys(query).length > 0){
-    let data = dummyUserData;
+    let data = database.users;
 
     for (const [key, value] of Object.entries(query)) {
       logger.debug(`Filtering on ${key} with ${value}`);
@@ -157,11 +159,11 @@ user.getAll = function (token, query, callback) {
   } else {
     result.status = 200;
     result.message = 'All users';
-    result.data = dummyUserData;
+    result.data = database.users;
   }
 
   logger.debug('Removing password and token from data');
-  // Doens't work without copy: removes password and token permanently because of reference to dummyUserData
+  // Doens't work without copy: removes password and token permanently because of reference to database.users
   // Dirty hack to make a copy without reference
   result.data = JSON.parse(JSON.stringify(result.data));
   result.data = result.data.map((item) => {
@@ -196,7 +198,7 @@ user.login = function (credentials, callback) {
     return;
   }
 
-  const filtered = dummyUserData.filter(
+  const filtered = database.users.filter(
     item => item.emailAddress == credentials.emailAddress
   );
 
@@ -214,7 +216,7 @@ user.login = function (credentials, callback) {
   if(user.password == credentials.password) {
     logger.debug('Credentials correct, generating token');
     let token = generateRandomString(20);
-    dummyUserData.forEach((item) => {
+    database.users.forEach((item) => {
       if(item.emailAddress == user.emailAddress) {
         item.token = token;
       }
@@ -257,7 +259,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  let user = dummyUserData.find(item => item.id == userid);
+  let user = database.users.find(item => item.id == userid);
 
   if(user === undefined) {
     logger.debug('User not found');
@@ -314,7 +316,7 @@ user.update = function (token, userid, updatedUser, callback) {
   }
 
   logger.debug('Searching for existing user with specified email address');
-  let existingUser = dummyUserData.find(
+  let existingUser = database.users.find(
     (item) => (
       item.emailAddress == updatedUser.emailAddress && 
       item.id != userid
@@ -354,7 +356,7 @@ user.update = function (token, userid, updatedUser, callback) {
  */
 user.isTokenValid = function (token) {
   logger.debug('Checking token');
-  const filtered = dummyUserData.filter(
+  const filtered = database.users.filter(
     item => item.token == token
   );
   return filtered.length != 0;
@@ -370,7 +372,7 @@ user.getByToken = function (token, callback) {
   logger.info('Getting user profile by token');
   let result = {};
 
-  const filtered = dummyUserData.filter(
+  const filtered = database.users.filter(
     item => item.token == token
   );
 
@@ -409,7 +411,7 @@ user.getById = function (token, id, callback) {
     return;
   }
 
-  let user = dummyUserData.find(
+  let user = database.users.find(
     item => item.id == id
   );
 
@@ -452,7 +454,7 @@ user.delete = function (token, userid, callback) {
     return;
   }
 
-  let user = dummyUserData.find(
+  let user = database.users.find(
     item => item.id == userid 
   );
 
@@ -474,7 +476,7 @@ user.delete = function (token, userid, callback) {
     return;
   }
 
-  dummyUserData = dummyUserData.filter(item => item.id != userid);
+  database.users = database.users.filter(item => item.id != userid);
 
   logger.debug('User deleted');
   result.status = 200;
