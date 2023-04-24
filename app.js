@@ -1,9 +1,9 @@
 const express = require('express');
 const app = express();
-const logger = require('./utils/logger').logger;
+const logger = require('./src/utils/logger').logger;
 const port = 3000;
-const api = require('./routes/api');
-const user = require('./routes/user');
+const api = require('./src/routes/api');
+const user = require('./src/routes/user');
 
 app.use('/api', api);
 app.use('/api/user', user);
