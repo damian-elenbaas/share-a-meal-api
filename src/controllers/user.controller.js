@@ -1,5 +1,4 @@
 const logger = require('../utils/logger').logger;
-const validators = require('../utils/validators');
 const utils = require('../utils/utils');
 const joi = require('joi');
 
