@@ -280,7 +280,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  logger.debug('No existing user found, updating user');
+  logger.debug('No email conflict found, updating user');
   user.firstName = updatedUser.firstName;
   user.lastName = updatedUser.lastName;
   user.street = updatedUser.street;
