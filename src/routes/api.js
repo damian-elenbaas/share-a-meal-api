@@ -25,12 +25,4 @@ router.get('/info', (req, res) => {
   });
 });
 
-// POST: Create user
-router.post('/register', (req, res) => {
-  logger.log(`[POST] /api/register`);
-  user.create(req.body, (result) => {
-    res.status(result.status).json(result);
-  });
-});
-
 module.exports = router;

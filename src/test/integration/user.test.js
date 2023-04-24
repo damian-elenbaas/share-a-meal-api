@@ -14,7 +14,7 @@ describe('UC-201', function () {
   it('TC-201-1 - Required field is missing', (done) => {
     chai
       .request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
@@ -45,7 +45,7 @@ describe('UC-201', function () {
   it('TC-201-2 - Not a valid email address', function (done) {
     chai
       .request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
@@ -76,7 +76,7 @@ describe('UC-201', function () {
   it('TC-201-3 - Not a valid password', function (done) {
     chai
       .request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
@@ -107,7 +107,7 @@ describe('UC-201', function () {
   it('TC-201-4 - User already exists', function (done) {
     chai
       .request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
@@ -138,7 +138,7 @@ describe('UC-201', function () {
   it('TC-201-5 - User successfuly registered', function (done) {
     chai
       .request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
@@ -291,7 +291,7 @@ describe('UC-206', function () {
     let id, token;
 
     chai.request(server)
-      .post('/api/register')
+      .post('/api/user')
       .send({
         'firstName': 'Damian',
         'lastName': 'Elenbaas',
