@@ -1,3 +1,5 @@
+const logger = require('../utils/logger').logger;
+
 let dummyUserData = [
   {
     'id': 1,
@@ -32,9 +34,11 @@ let user = {};
  * @param {Function} callback - callback that handles response
  */
 user.create = function (body, callback) {
+  logger.info('Creating user');
   let result = {};
 
   if(!isUserObjectValid(body)) {
+    logger.debug('Invalid body');
     result.status = 400;
     result.message = 'Bad request. Not all required properties are specified';
     result.data = {};
@@ -43,6 +47,7 @@ user.create = function (body, callback) {
   }
 
   if(!validateEmail(body.emailAddress)) {
+    logger.debug('Invalid email address');
     result.status = 400;
     result.message = 'Bad request. Invalid email address';
     result.data = {};
@@ -51,14 +56,16 @@ user.create = function (body, callback) {
   }
 
   if(!validatePhoneNumber(body.phoneNumber)) {
+    logger.debug('Invalid phone number');
     result.status = 400;
-    result.message = "Bad Request. Invalid phone number";
+    result.message = 'Bad Request. Invalid phone number';
     result.data = {};
     callback(result);
     return;
   }
 
   if(!validatePassword(body.password)) {
+    logger.debug('Invalid password');
     result.status = 400;
     result.message = 'Bad request. Invalid password';
     result.data = {};
@@ -66,9 +73,11 @@ user.create = function (body, callback) {
     return;
   }
 
+  logger.debug('Searching for existing user');
   let existingUser = dummyUserData.find((item) => item.emailAddress == body.emailAddress); 
 
   if(existingUser != undefined) {
+    logger.debug('Email address already in use');
     result.status = 403;
     result.message = 'User with specified email address already exists';
     result.data = {};
@@ -76,6 +85,7 @@ user.create = function (body, callback) {
     return;
   }
 
+  logger.debug('Adding user to database');
   let lastId = dummyUserData[dummyUserData.length - 1].id;
   let newUser = {
     'id': lastId + 1,
@@ -104,10 +114,12 @@ user.create = function (body, callback) {
  * @param {Function} callback - callback that handles response
  */
 user.getAll = function (token, query, callback) {
+  logger.info('Getting all users')
   let result = {};
 
   const filteredUsers = dummyUserData.filter(item => item.hasOwnProperty('token') && item.token == token);
   if(filteredUsers.length == 0) {
+    logger.debug('Invalid token');
     result.status = 401;
     result.message = 'Invalid token';
     result.data = {};
@@ -115,11 +127,15 @@ user.getAll = function (token, query, callback) {
     return;
   }
 
+  logger.debug(`Query: ${query}`);
+
   if(Object.keys(query).length > 0){
     let data = dummyUserData;
 
     for (const [key, value] of Object.entries(query)) {
+      logger.debug(`Filtering on ${key} with ${value}`);
       if(!data[0].hasOwnProperty(`${key}`)) {
+        logger.debug(`Property doesn't exists`);
         result.status = 200;
         result.message = 'All users';
         result.data = {};
@@ -144,6 +160,7 @@ user.getAll = function (token, query, callback) {
     result.data = dummyUserData;
   }
 
+  logger.debug('Removing password and token from data');
   // Doens't work without copy: removes password and token permanently because of reference to dummyUserData
   // Dirty hack to make a copy without reference
   result.data = JSON.parse(JSON.stringify(result.data));
@@ -164,11 +181,14 @@ user.getAll = function (token, query, callback) {
  * @param {Function} callback - callback function that handles response
  */
 user.login = function (credentials, callback) {
+  logger.info('Logging into user')
   let result = {};
 
+  logger.debug(`Credentials: ${credentials}`);
   if(!(credentials.hasOwnProperty('emailAddress') 
     && credentials.hasOwnProperty('password'))
   ) {
+    logger.debug('Invalid body');
     result.status = 400;
     result.message = "Invalid body";
     result.data = {};
@@ -181,6 +201,7 @@ user.login = function (credentials, callback) {
   );
 
   if(filtered.length == 0) {
+    logger.debug('Account does not exist');
     result.status = 404;
     result.message = "Account with specified email address does not exist";
     result.data = {};
@@ -191,6 +212,7 @@ user.login = function (credentials, callback) {
   const user = filtered[0];
 
   if(user.password == credentials.password) {
+    logger.debug('Credentials correct, generating token');
     let token = generateRandomString(20);
     dummyUserData.forEach((item) => {
       if(item.emailAddress == user.emailAddress) {
@@ -204,6 +226,7 @@ user.login = function (credentials, callback) {
     result.message = "Logged in succesfully";
     result.data = user;
   } else {
+    logger.debug('Invalid credentials');
     result.status = 400;
     result.message = "Invalid credentials";
     result.data = {};
@@ -222,9 +245,11 @@ user.login = function (credentials, callback) {
  * @param {Function} callback - callback function that handles response
  */
 user.update = function (token, userid, updatedUser, callback) {
+  logger.info('Updating user');
   let result = {};
 
   if(!this.isTokenValid(token)) {
+    logger.debug('Invalid token');
     result.status = 401;
     result.message = "Invalid token";
     result.data = {};
@@ -235,6 +260,7 @@ user.update = function (token, userid, updatedUser, callback) {
   let user = dummyUserData.find(item => item.id == userid);
 
   if(user === undefined) {
+    logger.debug('User not found');
     result.status = 404;
     result.message = "User not found";
     result.data = {};
@@ -243,6 +269,7 @@ user.update = function (token, userid, updatedUser, callback) {
   }
 
   if(!(user.hasOwnProperty('token') && user.token === token)) {
+    logger.debug('Not the owner of the user');
     result.status = 403;
     result.message = "You are not the owner of the user";
     result.data = {};
@@ -251,6 +278,7 @@ user.update = function (token, userid, updatedUser, callback) {
   } 
 
   if(!isUserObjectValid(updatedUser)) { 
+    logger.debug('Not all properties specified');
     result.status = 400;
     result.message = "Bad Request. Not all required properties are specified";
     result.data = {};
@@ -259,6 +287,7 @@ user.update = function (token, userid, updatedUser, callback) {
   }
 
   if(!validateEmail(updatedUser.emailAddress)) {
+    logger.debug('Invalid email address');
     result.status = 400;
     result.message = "Bad Request. Invalid email address";
     result.data = {};
@@ -267,6 +296,7 @@ user.update = function (token, userid, updatedUser, callback) {
   }
 
   if(!validatePhoneNumber(updatedUser.phoneNumber)) {
+    logger.debug('Invalid phone number');
     result.status = 400;
     result.message = "Bad Request. Invalid phone number";
     result.data = {};
@@ -275,6 +305,7 @@ user.update = function (token, userid, updatedUser, callback) {
   }
 
   if(!validatePassword(updatedUser.password)) {
+    logger.debug('Invalid password');
     result.status = 400;
     result.message = "Bad Request. Invalid password";
     result.data = {};
@@ -282,6 +313,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
+  logger.debug('Searching for existing user with specified email address');
   let existingUser = dummyUserData.find(
     (item) => (
       item.emailAddress == updatedUser.emailAddress && 
@@ -290,6 +322,7 @@ user.update = function (token, userid, updatedUser, callback) {
   ); 
 
   if(existingUser != undefined) {
+    logger.debug('Existing user found');
     result.status = 403;
     result.message = 'User with specified email address already exists';
     result.data = {};
@@ -297,6 +330,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
+  logger.debug('No existing user found, updating user');
   user.firstName = updatedUser.firstName;
   user.lastName = updatedUser.lastName;
   user.street = updatedUser.street;
@@ -319,6 +353,7 @@ user.update = function (token, userid, updatedUser, callback) {
  * @returns {boolean} isValid
  */
 user.isTokenValid = function (token) {
+  logger.debug('Checking token');
   const filtered = dummyUserData.filter(
     item => item.token == token
   );
@@ -332,6 +367,7 @@ user.isTokenValid = function (token) {
  * @param {Function} callback - callback that handles response
  */
 user.getByToken = function (token, callback) {
+  logger.info('Getting user profile by token');
   let result = {};
 
   const filtered = dummyUserData.filter(
@@ -339,10 +375,12 @@ user.getByToken = function (token, callback) {
   );
 
   if(filtered.length == 0) {
+    logger.debug('Invalid token');
     result.status = 401;
     result.message = "Invalid token";
     result.data = {};
   } else {
+    logger.debug('Profile found');
     result.status = 200;
     result.message = "Profile succesfully received";
     result.data = filtered[0];
@@ -359,9 +397,11 @@ user.getByToken = function (token, callback) {
  * @param {Function} callback - callback that handles response
  */
 user.getById = function (token, id, callback) {
+  logger.info('Getting user by id');
   let result = {};
 
   if(!this.isTokenValid(token)) {
+    logger.debug('Invalid token');
     result.status = 401;
     result.message = "Invalid token";
     result.data = {}; 
@@ -374,10 +414,12 @@ user.getById = function (token, id, callback) {
   );
 
   if(user == undefined) {
+    logger.debug('User not found');
     result.status = 404;
     result.message = "User not found";
     result.data = {}; 
   } else {
+    logger.debug('User found');
     // Dirty hack to make a copy without reference
     user = JSON.parse(JSON.stringify(user));
     delete user.password;
@@ -398,9 +440,11 @@ user.getById = function (token, id, callback) {
  * @param {Function} callback - callback that handles the response 
   */
 user.delete = function (token, userid, callback) {
+  logger.info('Deleting user');
   let result = {};
 
   if(!this.isTokenValid(token)) {
+    logger.debug('Token invalid');
     result.status = 401;
     result.message = 'Invalid token';
     result.data = {}; 
@@ -413,6 +457,7 @@ user.delete = function (token, userid, callback) {
   );
 
   if(user == undefined) {
+    logger.debug('User not found');
     result.status = 404;
     result.message = `User with ID ${userid} is not found`;
     result.data = {}; 
@@ -421,6 +466,7 @@ user.delete = function (token, userid, callback) {
   }
 
   if(user.token != token) {
+    logger.debug('Not the owner of the user');
     result.status = 403;
     result.message = `You are not the owner of user with ID ${userid}`;
     result.data = {}; 
@@ -430,6 +476,7 @@ user.delete = function (token, userid, callback) {
 
   dummyUserData = dummyUserData.filter(item => item.id != userid);
 
+  logger.debug('User deleted');
   result.status = 200;
   result.message = `User with ID ${userid} is deleted`;
   result.data = {}; 
@@ -443,6 +490,7 @@ user.delete = function (token, userid, callback) {
  * @returns {boolean} isValid
  */
 const validateEmail = (email) => {
+  logger.debug(`Validating email: ${email}`);
   return String(email)
     .toLowerCase()
     .match(
@@ -457,6 +505,7 @@ const validateEmail = (email) => {
  * @returns {boolean} isValid
  */
 const validatePassword = (password) => {
+  logger.debug(`Validating password: ${password}`);
   return String(password).length > 0;
 }
 
@@ -467,17 +516,17 @@ const validatePassword = (password) => {
  * @returns {boolean} isValid
  */
 const validatePhoneNumber = (phoneNumber) => {
-  // regular expression to match a valid mobile phone number
+  logger.debug(`Validating phone number: ${phoneNumber}`);
+
   const regex = /^\+?\d{1,3}?\d{9}$/;
 
-  // remove whitespace from phone number
   phoneNumber = phoneNumber.replace(/\s/g, '');
 
-  // check if the input matches the regular expression
   return regex.test(phoneNumber);
 }
 
 const isUserObjectValid = (user) => {
+  logger.debug(`Validating user object: ${user}`);
   return (
     user.hasOwnProperty('emailAddress') &&
     user.hasOwnProperty('firstName') &&
@@ -497,6 +546,7 @@ const isUserObjectValid = (user) => {
  * @returns {boolean} isValid
  */
 const generateRandomString = (length) => {
+  logger.debug('Generating string');
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const charactersLength = characters.length;

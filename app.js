@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const logger = require('./utils/logger').logger;
 const port = 3000;
 const api = require('./routes/api');
 const user = require('./routes/user');
@@ -7,7 +8,7 @@ const user = require('./routes/user');
 app.use('/api', api);
 app.use('/api/user', user);
 app.use('*', (req, res) => {
-  console.log(`[*] Invalid Endpoint`);
+  logger.info(`[*] Invalid Endpoint`);
   res.status(404).json({
     'status': 404,
     'message': 'Endpoint not found',
@@ -16,7 +17,7 @@ app.use('*', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
+  logger.info(`Example app listening on port ${port}`);
 });
 
 module.exports = app;
