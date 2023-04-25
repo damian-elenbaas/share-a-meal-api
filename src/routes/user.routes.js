@@ -55,27 +55,7 @@ router.get('/profile', (req, res) => {
 });
 
 // GET: Get all users
-router.get('/', (req, res) => {
-  logger.log(`[GET] /api/user/`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  if(req.params.length > 2) {
-    res.status(400).json({
-      'status': 400,
-      'message': 'Bad request. Maximum query count is 2.',
-      'data': {}
-    })
-  }
-
-  user.getAll(token, req.query, function (result) {
-    res.status(result.status).json(result);
-  });
-});
+router.get('/', user.getAll);
 
 // POST: Create user
 router.post('/', (req, res) => {

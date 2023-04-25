@@ -1,8 +1,10 @@
 const logger = require('../utils/logger').logger;
 const utils = require('../utils/utils');
 const joi = require('joi');
+const pool = require('../utils/mysql-db');
 
 let database = require('../utils/database');
+
 
 const userSchema = joi.object({
   emailAddress: joi.string()
@@ -85,70 +87,48 @@ user.create = function (body, callback) {
 
 /**
  * Function that gets all existing users with setted filter options
- *
- * @param {string} token - token of logged in user
- * @param {object} query - object that can contain fitler properties
- * @param {Function} callback - callback that handles response
  */
-user.getAll = function (token, query, callback) {
+user.getAll = function (req, res) {
   logger.info('Getting all users')
-  let result = {};
 
-  const filteredUsers = database.users.filter(item => item.hasOwnProperty('token') && item.token == token);
-  if(filteredUsers.length == 0) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = 'Invalid token';
-    result.data = {};
-    callback(result);
-    return;
+  if(req.params.length > 2) {
+    res.status(400).json({
+      'status': 400,
+      'message': 'Bad request. Maximum query count is 2.',
+      'data': {}
+    });
   }
+  
+  let query = req.query;
 
-  logger.debug(`Query: ${query}`);
-
-  if(Object.keys(query).length > 0){
-    let data = database.users;
-
-    for (const [key, value] of Object.entries(query)) {
-      logger.debug(`Filtering on ${key} with ${value}`);
-      if(!data[0].hasOwnProperty(`${key}`)) {
-        logger.debug(`Property doesn't exists`);
-        result.status = 200;
-        result.message = 'All users';
-        result.data = {};
-        callback(result);
-        return;
-      }
-      data = data.filter(item => {
-        if(typeof item[`${key}`] === 'boolean') {
-          return item[`${key}`] === JSON.parse(value);
-        } else {
-          return item[`${key}`].toLowerCase().includes(value.toLowerCase());
+  pool.getConnection((err, conn) => {
+    if(err) {
+      res.status(500).json({
+        'status': 500,
+        'message': err.message,
+        'data': {}
+      })
+    } else {
+      conn.query(
+        'SELECT * FROM `user`',
+        (err, results, fields) => {
+          if(err) {
+            res.status(500).json({
+              'status': 500,
+              'message': err.message,
+              'data': {}
+            })
+          } else {
+            res.status(200).json({
+              'status': 200,
+              'message': 'All users',
+              'data': results
+            })
+          }
         }
-      });
+      )
     }
-
-    result.status = 200;
-    result.message = 'All users';
-    result.data = data;
-  } else {
-    result.status = 200;
-    result.message = 'All users';
-    result.data = database.users;
-  }
-
-  logger.debug('Removing password and token from data');
-  // Doens't work without copy: removes password and token permanently because of reference to database.users
-  // Dirty hack to make a copy without reference
-  result.data = JSON.parse(JSON.stringify(result.data));
-  result.data = result.data.map((item) => {
-    delete item.password;
-    delete item.token;
-
-    return item;
   })
-
-  callback(result);
 }
 
 /**
