@@ -31,7 +31,10 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(400);
         res.body.should.has.property('message')
-          .to.be.equal('Bad request. Not all required properties are specified');
+
+        let { message } = res.body;
+        message.should.be.an('string');
+
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -62,7 +65,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(400);
         res.body.should.has.property('message')
-          .to.be.equal('Bad request. Invalid email address');
+          .to.be.equal('Invalid email address');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -93,7 +96,10 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(400);
         res.body.should.has.property('message')
-          .to.be.equal('Bad request. Invalid password');
+        
+        let { message } = res.body;
+        message.should.be.an('string');
+
         res.body.should.has.property('data');
 
         let { data } = res.body;

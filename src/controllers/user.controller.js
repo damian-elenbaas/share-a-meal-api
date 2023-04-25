@@ -1,8 +1,33 @@
 const logger = require('../utils/logger').logger;
-const validators = require('../utils/validators');
 const utils = require('../utils/utils');
+const joi = require('joi');
 
 let database = require('../utils/database');
+
+const userSchema = joi.object({
+  emailAddress: joi.string()
+    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+    .message('Invalid email address')
+    .required(),
+  firstName: joi.string()
+    .required(),
+  lastName: joi.string()
+    .required(),
+  street: joi.string()
+    .required(),
+  city: joi.string()
+    .required(),
+  isActive: joi.boolean()
+    .required(),
+  password: joi.string()
+    .min(1)
+    .required(),
+  phoneNumber: joi.string()
+    .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    .message('Invalid phone number')
+    .required(),
+  token: joi.string()
+})
 
 let user = {};
 
@@ -16,37 +41,10 @@ user.create = function (body, callback) {
   logger.info('Creating user');
   let result = {};
 
-  if(!validators.isUserObjectValid(body)) {
-    logger.debug('Invalid body');
+  const validation = userSchema.validate(body);
+  if(validation.error) {
     result.status = 400;
-    result.message = 'Bad request. Not all required properties are specified';
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validateEmail(body.emailAddress)) {
-    logger.debug('Invalid email address');
-    result.status = 400;
-    result.message = 'Bad request. Invalid email address';
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePhoneNumber(body.phoneNumber)) {
-    logger.debug('Invalid phone number');
-    result.status = 400;
-    result.message = 'Bad Request. Invalid phone number';
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePassword(body.password)) {
-    logger.debug('Invalid password');
-    result.status = 400;
-    result.message = 'Bad request. Invalid password';
+    result.message = validation.error.details[0].message;
     result.data = {};
     callback(result);
     return;
@@ -255,38 +253,11 @@ user.update = function (token, userid, updatedUser, callback) {
     callback(result);
     return;
   } 
-
-  if(!validators.isUserObjectValid(updatedUser)) { 
-    logger.debug('Not all properties specified');
+  
+  const validation = userSchema.validate(updatedUser);
+  if(validation.error) {
     result.status = 400;
-    result.message = "Bad Request. Not all required properties are specified";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validateEmail(updatedUser.emailAddress)) {
-    logger.debug('Invalid email address');
-    result.status = 400;
-    result.message = "Bad Request. Invalid email address";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePhoneNumber(updatedUser.phoneNumber)) {
-    logger.debug('Invalid phone number');
-    result.status = 400;
-    result.message = "Bad Request. Invalid phone number";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!validators.validatePassword(updatedUser.password)) {
-    logger.debug('Invalid password');
-    result.status = 400;
-    result.message = "Bad Request. Invalid password";
+    result.message = validation.error.details[0].message;
     result.data = {};
     callback(result);
     return;
@@ -309,7 +280,7 @@ user.update = function (token, userid, updatedUser, callback) {
     return;
   }
 
-  logger.debug('No existing user found, updating user');
+  logger.debug('No email conflict found, updating user');
   user.firstName = updatedUser.firstName;
   user.lastName = updatedUser.lastName;
   user.street = updatedUser.street;
