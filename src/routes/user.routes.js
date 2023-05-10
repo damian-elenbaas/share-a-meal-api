@@ -47,21 +47,7 @@ router.get('/', user.getAll);
 router.post('/', user.create);
 
 // GET: Get user profile by id
-router.get('/:userid', (req, res) => {
-  logger.log(`[GET] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.getById(token, id, (result) => {
-    res.status(result.status).json(result);
-  })
-});
+router.get('/:userid', user.getById);
 
 function sendAuthorizationError(res) {
   logger.debug('Send authorization error');

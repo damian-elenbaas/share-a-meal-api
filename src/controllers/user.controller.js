@@ -345,46 +345,58 @@ user.getByToken = function (token, callback) {
 
 /**
  * Function that gets user by given id
- *
- * @param {string} token - token of logged in user
- * @param {number} id - id of user
- * @param {Function} callback - callback that handles response
  */
-user.getById = function (token, id, callback) {
+user.getById = function (req, res) {
+  logger.log(`[GET] /api/user/${req.params.userid}`);
+
   logger.info('Getting user by id');
-  let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+  let userid = req.params.userid;
 
-  let user = database.users.find(
-    item => item.id == id
-  );
+  // TODO: Implement JWT
+  //
+  // if(!this.isTokenValid(token)) {
+  //   logger.debug('Invalid token');
+  //   result.status = 401;
+  //   result.message = "Invalid token";
+  //   result.data = {}; 
+  //   callback(result);
+  //   return;
+  // }
 
-  if(user == undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = "User not found";
-    result.data = {}; 
-  } else {
-    logger.debug('User found');
-    // Dirty hack to make a copy without reference
-    user = JSON.parse(JSON.stringify(user));
-    delete user.password;
-    delete user.token;
-    
-    result.status = 200;
-    result.message = "User succesfully found";
-    result.data = user;
-  }
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  callback(result);
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'User not found',
+          'data': {}
+        });
+      }
+
+      return res.status(200).json({
+        'status': 200,
+        'message': 'User successfully found',
+        'data': sqlResults[0]
+      });
+    });
+  });
 }
 
 /**
