@@ -389,52 +389,80 @@ user.getById = function (token, id, callback) {
 
 /**
  * Deletes user with given id
- * @param {string} token - Token of logged in user
- * @param {number} userid - id of user you want to delete
- * @param {Function} callback - callback that handles the response 
   */
-user.delete = function (token, userid, callback) {
+user.delete = function (req, res) {
+  logger.log(`[DELETE] /api/user/${req.params.userid}`);
   logger.info('Deleting user');
-  let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Token invalid');
-    result.status = 401;
-    result.message = 'Invalid token';
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+  // TODO: Implement JWT
+  // if(!this.isTokenValid(token)) {
+  //   logger.debug('Token invalid');
+  //   result.status = 401;
+  //   result.message = 'Invalid token';
+  //   result.data = {}; 
+  //   callback(result);
+  //   return;
+  // }
 
-  let user = database.users.find(
-    item => item.id == userid 
-  );
+  let userid = req.params.userid;
 
-  if(user == undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = `User with ID ${userid} is not found`;
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+  pool.getConnection((err, conn) => {
+    if(err) {
+      console.log('Pool error: ', err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    } 
 
-  if(user.token != token) {
-    logger.debug('Not the owner of the user');
-    result.status = 403;
-    result.message = `You are not the owner of user with ID ${userid}`;
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        console.log('SQL error: ', sqlError);
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
 
-  database.users = database.users.filter(item => item.id != userid);
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': `User with ID ${userid} is not found`,
+          'data': {}
+        });
+      }
 
-  logger.debug('User deleted');
-  result.status = 200;
-  result.message = `User with ID ${userid} is deleted`;
-  result.data = {}; 
-  callback(result);
+      // TODO: Check if current user is owner of requested user (403)
+      //
+      // if(user.token != token) {
+      //   logger.debug('Not the owner of the user');
+      //   result.status = 403;
+      //   result.message = `You are not the owner of user with ID ${userid}`;
+      //   result.data = {}; 
+      //   callback(result);
+      //   return;
+      // }
+      
+      conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+        if(sqlError) {
+          console.log('SQL error: ', sqlError);
+          return res.status(500).json({
+            'status': 500,
+            'message': 'Internal server error',
+            'data': {}
+          });
+        }
+
+        return res.status(200).json({
+          'status': 200,
+          'message': `User with ID ${userid} is deleted`,
+          'data': {}
+        });
+      });
+    })
+  });
 }
 
 

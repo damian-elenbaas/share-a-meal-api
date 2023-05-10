@@ -23,21 +23,7 @@ router.put('/:userid', (req, res) => {
 });
 
 // DELETE: Delete logged in user
-router.delete('/:userid', (req, res) => {
-  logger.log(`[DELETE] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.delete(token, id, (response) => {
-    res.status(response.status).json(response);
-  })
-});
+router.delete('/:userid', user.delete);
 
 // GET: Get logged in user
 router.get('/profile', (req, res) => {
