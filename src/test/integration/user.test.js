@@ -120,7 +120,7 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
+        'emailAddress': 'm.vandullemen@server.nl',
         'password': '123',
         'phoneNumber': '+31123456789'
       })

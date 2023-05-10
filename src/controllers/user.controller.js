@@ -39,50 +39,72 @@ let user = {};
  * @param {object} body - body that contains emailAddress, firstName, lastName, street, city, isActive, password and phoneNumber
  * @param {Function} callback - callback that handles response
  */
-user.create = function (body, callback) {
+user.create = function (req, res) {
   logger.info('Creating user');
   let result = {};
 
+  let body = req.body;
+
   const validation = userSchema.validate(body);
   if(validation.error) {
-    result.status = 400;
-    result.message = validation.error.details[0].message;
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': validation.error.details[0].message,
+      'data': {}
+    });
   }
 
-  logger.debug('Searching for existing user');
-  let existingUser = database.users.find((item) => item.emailAddress == body.emailAddress); 
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': err.message,
+        'data': {}
+      });
+    } else {
+      let insertedId = 0;
+      conn.query(
+        'INSERT INTO user (firstName, lastName, isActive, emailAddress, password, phoneNumber, street, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
+        (sqlError, sqlResults) => {
+          if(sqlError) {
+            console.log('SQL error: ', sqlError);
+            if(sqlError.code == 'ER_DUP_ENTRY') {
+              logger.debug('Email address already in use');
+              return res.status(403).json({
+                'status': 403,
+                'message': 'User with specified email address already exists',
+                'data': {}
+              })
+            } else {
+              return res.status(403).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              })
+            }
+          } else {
+            conn.query(`SELECT * FROM user WHERE id = ${sqlResults.insertId}`, (sqlError, sqlResults) => {
+              if(sqlError) {
+                console.log('SQL error: ', sqlError);
+                return res.status(500).json({
+                  'status': 500,
+                  'message': 'Internal server error',
+                  'data': {}
+                })
+              } else {
+                return res.status(201).json({
+                  'status': 201,
+                  'message': 'User successfully registered',
+                  'data': sqlResults[0]
+                });
+              }
+            });
+          }
+      });
 
-  if(existingUser != undefined) {
-    logger.debug('Email address already in use');
-    result.status = 403;
-    result.message = 'User with specified email address already exists';
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  logger.debug('Adding user to database');
-  let lastId = database.users[database.users.length - 1].id;
-  let newUser = {
-    'id': lastId + 1,
-    'firstName': body.firstName,
-    'lastName': body.lastName,
-    'street': body.street,
-    'city': body.city,
-    'isActive': body.isActive,
-    'emailAddress': body.emailAddress,
-    'password': body.password,
-    'phoneNumber': body.phoneNumber
-  };
-  database.users.push(newUser);
-
-  result.status = 201;
-  result.message = 'User succesfully registered';
-  result.data = newUser;
-  callback(result);
+    }
+  });
 }
 
 /**
@@ -100,6 +122,8 @@ user.getAll = function (req, res) {
   }
   
   let query = req.query;
+
+  // TODO: Add filtering feature to DB
 
   pool.getConnection((err, conn) => {
     if(err) {

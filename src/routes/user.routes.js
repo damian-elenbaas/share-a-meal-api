@@ -58,13 +58,7 @@ router.get('/profile', (req, res) => {
 router.get('/', user.getAll);
 
 // POST: Create user
-router.post('/', (req, res) => {
-  logger.log(`[POST] /api/user`);
-
-  user.create(req.body, (result) => {
-    res.status(result.status).json(result);
-  });
-});
+router.post('/', user.create);
 
 // GET: Get user profile by id
 router.get('/:userid', (req, res) => {
