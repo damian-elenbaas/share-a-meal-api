@@ -293,6 +293,29 @@ user.update = function (req, res) {
       'data': {}
     });
   }
+  
+  let sql = "UPDATE user SET ";
+  let fieldCount = 0;
+  Object.entries(req.body).forEach(([key, value]) => {
+    const keys = Object.entries(required.describe().keys);
+    keys.forEach(([field, props]) => {
+      if(field == key) {
+        if(fieldCount == 0) {
+          sql = sql + `${field} = ?`;
+        } else {
+          sql = sql + `, ${field} = ?`;
+        }
+        fieldCount = fieldCount + 1;
+      }
+    })
+  })
+  sql = sql + " WHERE id = ?";
+
+  let values = Object.values(req.body);
+  values.push(userid);
+
+  console.log(sql);
+  console.log(values);
 
   // if(userid != payloadId) {
   //   return res.status(403).json({
@@ -328,8 +351,9 @@ user.update = function (req, res) {
         });
       }
 
-      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ? WHERE id = ?',
-        [req.body.firstName, req.body.lastName, req.body.isActive, req.body.emailAddress, req.body.password, req.body.phoneNumber, req.body.street, req.body.city, userid],
+      conn.query(
+        sql,
+        values,
         (sqlError, sqlResults) => {
           if(sqlError) {
             return res.status(403).json({
