@@ -1,14 +1,14 @@
-const logger = require('../utils/logger').logger;
-const utils = require('../utils/utils');
+const { logger, privateKey } = require('../utils/utils');
 const joi = require('joi');
 const pool = require('../utils/mysql-db');
+const jwt = require('jsonwebtoken');
 
 let database = require('../utils/database');
 
 
 const userSchema = joi.object({
   emailAddress: joi.string()
-    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
     .message('Invalid email address')
     .required(),
   firstName: joi.string()
@@ -20,8 +20,9 @@ const userSchema = joi.object({
   city: joi.string()
     .required(),
   isActive: joi.boolean(),
+  // TODO: minsts 1 hoofd letter en 1 cijfer
   password: joi.string()
-    .min(1)
+    .min(8)
     .required(),
   phoneNumber: joi.string()
     .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
@@ -136,7 +137,6 @@ user.getAll = function (req, res) {
     }
   }
 
-  
   let query = req.query;
 
   // TODO: Add filtering feature to DB
@@ -173,64 +173,81 @@ user.getAll = function (req, res) {
 
 /**
  * Function that logs in user
- *
- * @param {object} credentials - object that contains emailAddress and password
- * @param {Function} callback - callback function that handles response
  */
-user.login = function (credentials, callback) {
+user.login = function (req, res) {
+  logger.log(`[POST] /api/login`);
   logger.info('Logging into user')
-  let result = {};
+
+  let credentials = req.body;
 
   logger.debug(`Credentials: ${credentials}`);
   if(!(credentials.hasOwnProperty('emailAddress') 
     && credentials.hasOwnProperty('password'))
   ) {
     logger.debug('Invalid body');
-    result.status = 400;
-    result.message = "Invalid body";
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': 'Invalid body',
+      'data': {}
+    });
   }
 
-  const filtered = database.users.filter(
-    item => item.emailAddress == credentials.emailAddress
-  );
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error('Pool error:', err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  if(filtered.length == 0) {
-    logger.debug('Account does not exist');
-    result.status = 404;
-    result.message = "Account with specified email address does not exist";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  const user = filtered[0];
-
-  if(user.password == credentials.password) {
-    logger.debug('Credentials correct, generating token');
-    let token = utils.generateRandomString(20);
-    database.users.forEach((item) => {
-      if(item.emailAddress == user.emailAddress) {
-        item.token = token;
+    conn.query('SELECT * FROM user WHERE emailAddress = ?', [credentials.emailAddress], (sqlError, sqlResults) => {
+      if(sqlError) {
+        logger.error('SQL error:', sqlError);
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
       }
-    })
 
-    user.token = token;
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Account with specified email address does not exist',
+          'data': {}
+        });
+      }
 
-    result.status = 200;
-    result.message = "Logged in succesfully";
-    result.data = user;
-  } else {
-    logger.debug('Invalid credentials');
-    result.status = 400;
-    result.message = "Invalid credentials";
-    result.data = {};
-  }
+      const { password, ...user } = sqlResults[0];
 
-  callback(result);
-  return;
+      if(credentials.password == password) {
+        logger.log('Signing token');
+        jwt.sign({ 'id': user.id }, privateKey, (err, token) => {
+          if(err) {
+            logger.error('JWT error:', err);
+            return res.status(500).json({
+              'status': 500,
+              'message': 'Internal server error',
+              'data': {}
+            });
+          }
+          return res.status(200).json({
+            'status': 200,
+            'message': 'Logged in succesfully',
+            'data': { ...user, token }
+          })
+        });
+      } else {
+        return res.status(404).json({
+          'status': 400,
+          'message': 'Invalid credentials',
+          'data': {}
+        });
+      }
+    });
+  });
 }
 
 /**
@@ -301,46 +318,58 @@ user.update = function (req, res) {
 }
 
 /**
- * Function that checks if given token is valid
- *
- * @param {string} token - token of logged in user
- * @returns {boolean} isValid
- */
-user.isTokenValid = function (token) {
-  logger.debug('Checking token');
-  const filtered = database.users.filter(
-    item => item.token == token
-  );
-  return filtered.length != 0;
-}
-
-/**
  * Function that gets user by given token
- *
- * @param {string} token - token of logged in user
- * @param {Function} callback - callback that handles response
  */
-user.getByToken = function (token, callback) {
+user.getByToken = function (req, res) {
   logger.info('Getting user profile by token');
-  let result = {};
 
-  const filtered = database.users.filter(
-    item => item.token == token
-  );
+  let id =  res.locals.decoded;
+  logger.log(id);
 
-  if(filtered.length == 0) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {};
-  } else {
-    logger.debug('Profile found');
-    result.status = 200;
-    result.message = "Profile succesfully received";
-    result.data = filtered[0];
-  }
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error('Pool error:', err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  callback(result);
+    conn.query('SELECT * FROM user WHERE id = ?', [id], (sqlError, sqlResults) => {
+      if(sqlError) {
+        logger.error('SQL error:', sqlError);
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+
+      if(sqlResults.length == 0) {
+        return res.status(401).json({
+          'status': 401,
+          'message': 'Invalid token',
+          'data': {}
+        });
+      }
+
+      let user = sqlResults[0];
+      
+      const { password, ...userInfo } = user;
+
+      res.status(200).json({
+        'status': 200,
+        'message': 'Profile found',
+        'data': userInfo 
+      })
+    })
+  });
+
+  logger.debug('Profile found');
+  result.status = 200;
+  result.message = "Profile succesfully received";
+  result.data = filtered[0];
 }
 
 /**

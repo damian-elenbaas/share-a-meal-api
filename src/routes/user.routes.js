@@ -1,15 +1,16 @@
 const express = require('express');
 const logger = require('../utils/logger').logger;
 const router = express.Router();
+const auth = require('../controllers/auth.controller');
 const user = require('../controllers/user.controller');
 
 router.use(express.json());
 
 // PUT: Update logged in user
-router.put('/:userid', user.update);
+router.put('/:userid', auth.validateToken, user.update);
 
 // DELETE: Delete logged in user
-router.delete('/:userid', user.delete);
+router.delete('/:userid', auth.validateToken, user.delete);
 
 // GET: Get logged in user
 router.get('/profile', (req, res) => {
@@ -27,22 +28,12 @@ router.get('/profile', (req, res) => {
 });
 
 // GET: Get all users
-router.get('/', user.getAll);
+router.get('/', auth.validateToken, user.getAll);
 
 // POST: Create user
 router.post('/', user.create);
 
 // GET: Get user profile by id
-router.get('/:userid', user.getById);
-
-function sendAuthorizationError(res) {
-  logger.debug('Send authorization error');
-  res.status(400).json({
-    'status': 400,
-    'message': 'Authorization header required',
-    'data': {}
-  });
-  return;
-}
+router.get('/:userid', auth.validateToken, user.getById);
 
 module.exports = router;

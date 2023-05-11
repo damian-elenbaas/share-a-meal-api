@@ -5,12 +5,7 @@ const user = require('../controllers/user.controller');
 
 router.use(express.json());
 
-router.post('/login', (req, res) => {
-  logger.log(`[POST] /api/login`);
-  user.login(req.body, (result) => {
-    res.status(result.status).json(result);
-  })
-})
+router.post('/login', user.login);
 
 router.get('/info', (req, res) => {
   logger.log(`[GET] /api/info`);
