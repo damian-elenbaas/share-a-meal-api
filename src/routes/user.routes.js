@@ -6,21 +6,7 @@ const user = require('../controllers/user.controller');
 router.use(express.json());
 
 // PUT: Update logged in user
-router.put('/:userid', (req, res) => {
-  logger.log(`[PUT] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.update(token, id, req.body, (response) => {
-    res.status(response.status).json(response);
-  })
-});
+router.put('/:userid', user.update);
 
 // DELETE: Delete logged in user
 router.delete('/:userid', user.delete);
