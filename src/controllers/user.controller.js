@@ -67,7 +67,7 @@ user.create = function (req, res) {
         [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
         (sqlError, sqlResults) => {
           if(sqlError) {
-            console.log('SQL error: ', sqlError);
+            logger.error('SQL error: ', sqlError);
             if(sqlError.code == 'ER_DUP_ENTRY') {
               logger.debug('Email address already in use');
               return res.status(403).json({
@@ -85,7 +85,7 @@ user.create = function (req, res) {
           } else {
             conn.query(`SELECT * FROM user WHERE id = ${sqlResults.insertId}`, (sqlError, sqlResults) => {
               if(sqlError) {
-                console.log('SQL error: ', sqlError);
+                logger.error('SQL error: ', sqlError);
                 return res.status(500).json({
                   'status': 500,
                   'message': 'Internal server error',
@@ -403,7 +403,7 @@ user.delete = function (req, res) {
 
   pool.getConnection((err, conn) => {
     if(err) {
-      console.log('Pool error: ', err);
+      logger.error('Pool error: ', err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -413,7 +413,7 @@ user.delete = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
       if(sqlError) {
-        console.log('SQL error: ', sqlError);
+        logger.error('SQL error: ', sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
@@ -442,7 +442,7 @@ user.delete = function (req, res) {
       
       conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
         if(sqlError) {
-          console.log('SQL error: ', sqlError);
+          logger.error('SQL error: ', sqlError);
           return res.status(500).json({
             'status': 500,
             'message': 'Internal server error',
