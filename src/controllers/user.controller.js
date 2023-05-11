@@ -223,7 +223,6 @@ user.login = function (credentials, callback) {
 user.update = function (req, res) {
   logger.log(`[PUT] /api/user/${req.params.userid}`);
   logger.info('Updating user');
-  let result = {};
 
   // TODO: Implement JWT validation
 
