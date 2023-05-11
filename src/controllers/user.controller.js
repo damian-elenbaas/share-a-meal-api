@@ -19,8 +19,7 @@ const userSchema = joi.object({
     .required(),
   city: joi.string()
     .required(),
-  isActive: joi.boolean()
-    .required(),
+  isActive: joi.boolean(),
   password: joi.string()
     .min(1)
     .required(),
@@ -62,7 +61,7 @@ user.create = function (req, res) {
         'data': {}
       });
     } else {
-      let insertedId = 0;
+
       conn.query(
         'INSERT INTO user (firstName, lastName, isActive, emailAddress, password, phoneNumber, street, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
         [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
