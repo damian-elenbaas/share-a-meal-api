@@ -5,7 +5,9 @@ const jwt = require('jsonwebtoken');
 
 const userSchema = joi.object({
   emailAddress: joi.string()
-    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
+    // Realistic email pattern, but not requested by design
+    // .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
+    .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
     .message('Invalid email address')
     .required(),
   firstName: joi.string()
@@ -22,10 +24,11 @@ const userSchema = joi.object({
     .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/))
     .required(),
   phoneNumber: joi.string()
-    .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    // Realistic phone pattern, but not requested by design
+    // .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    .pattern(new RegExp(/^06[-\s]?\d{8}$/))
     .message('Invalid phone number')
-    .required(),
-  token: joi.string()
+    .required()
 })
 
 let user = {};
@@ -65,7 +68,7 @@ user.create = function (req, res) {
               logger.debug('Email address already in use');
               return res.status(403).json({
                 'status': 403,
-                'message': 'User with specified email address already exists',
+                'message': 'Er bestaat al een user met opgegeven email adres',
                 'data': {}
               })
             } else {
@@ -86,7 +89,7 @@ user.create = function (req, res) {
               } else {
                 return res.status(201).json({
                   'status': 201,
-                  'message': 'User successfully registered',
+                  'message': 'User succesvol geregistreerd',
                   'data': sqlResults[0]
                 });
               }
@@ -161,7 +164,7 @@ user.getAll = function (req, res) {
 
             res.status(200).json({
               'status': 200,
-              'message': 'All users',
+              'message': 'Alle users',
               'data': users 
             })
           }
@@ -214,7 +217,7 @@ user.login = function (req, res) {
       if(sqlResults.length == 0) {
         return res.status(404).json({
           'status': 404,
-          'message': 'Account with specified email address does not exist',
+          'message': 'Er bestaat geen account met opgegeven email adres',
           'data': {}
         });
       }
@@ -233,14 +236,14 @@ user.login = function (req, res) {
           }
           return res.status(200).json({
             'status': 200,
-            'message': 'Logged in succesfully',
+            'message': 'Succesvol ingelogd',
             'data': { ...user, token }
           })
         });
       } else {
         return res.status(404).json({
           'status': 400,
-          'message': 'Invalid credentials',
+          'message': 'Invalide gegevens',
           'data': {}
         });
       }
@@ -259,6 +262,29 @@ user.update = function (req, res) {
   let userid = req.params.userid;
   let payloadId = res.locals.decoded.id;
 
+  const required = joi.object({
+  emailAddress: joi.string()
+    // Realistic email pattern, but not requested by design
+    // .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
+    .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
+    .message('Invalid email address')
+    .required(),
+  firstName: joi.string(),
+  lastName: joi.string(),
+  street: joi.string(),
+  city: joi.string(),
+  isActive: joi.boolean(),
+  password: joi.string()
+    .min(8)
+    .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/)),
+  phoneNumber: joi.string()
+    // Realistic phone pattern, but not requested by design
+    // .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    .pattern(new RegExp(/^06[-\s]?\d{8}$/))
+    .message('Invalid phone number')
+})
+
+
   const validation = userSchema.validate(req.body);
   if(validation.error) {
     return res.status(400).json({
@@ -271,7 +297,7 @@ user.update = function (req, res) {
   if(userid != payloadId) {
     return res.status(403).json({
       'status': 403,
-      'message': 'You are not the owner of the user',
+      'message': 'Je bent niet de eigenaar van de user',
       'data': {}
     });
   }
@@ -297,7 +323,7 @@ user.update = function (req, res) {
       if(sqlResults.length == 0) {
         return res.status(404).json({
           'status': 404,
-          'message': 'User not found',
+          'message': 'User niet gevonden',
           'data': {}
         });
       }
@@ -308,14 +334,14 @@ user.update = function (req, res) {
           if(sqlError) {
             return res.status(403).json({
               'status': 403,
-              'message': 'User with specified email address already exists',
+              'message': 'User met gegeven email adres bestaat al',
               'data': {}
             });
           }
 
           return res.status(200).json({
             'status': 200,
-            'message': 'User successfully updated',
+            'message': 'User succesvol geüpdatet',
             'data': {}
           });
       });
@@ -362,7 +388,7 @@ user.getByToken = function (req, res) {
 
       res.status(200).json({
         'status': 200,
-        'message': 'Profile found',
+        'message': 'Profiel gevonden',
         'data': user 
       })
     })
@@ -402,20 +428,20 @@ user.getById = function (req, res) {
       if(sqlResults.length == 0) {
         return res.status(404).json({
           'status': 404,
-          'message': 'User not found',
+          'message': 'User niet gevonden',
           'data': {}
         });
       }
 
       let { password, ...userinfo } = sqlResults[0];
-
-      if(userid == payloadId) {
-        userinfo.password = password;
-      }
       
+      if(userid == payloadId) {
+        userinfo = { ...userinfo, password };
+      }
+
       return res.status(200).json({
         'status': 200,
-        'message': 'User successfully found',
+        'message': 'User succesvol gevonden',
         'data': userinfo 
       });
     });
@@ -454,7 +480,7 @@ user.delete = function (req, res) {
       if(sqlResults.length == 0) {
         return res.status(404).json({
           'status': 404,
-          'message': `User with ID ${userid} is not found`,
+          'message': `User met ID ${userid} is niet gevonden`,
           'data': {}
         });
       }
@@ -462,7 +488,7 @@ user.delete = function (req, res) {
       if(userid != payloadId) {
         return res.status(403).json({
           'status': 403,
-          'message': `You are not the owner of the user`,
+          'message': `Je bent niet de eigenaar van de user`,
           'data': {}
         });
       }
@@ -478,7 +504,7 @@ user.delete = function (req, res) {
 
         return res.status(200).json({
           'status': 200,
-          'message': `User with ID ${userid} is deleted`,
+          'message': `User met ID ${userid} is verwijderd`,
           'data': {}
         });
       });

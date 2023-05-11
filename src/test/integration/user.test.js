@@ -53,7 +53,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'test@example.com',
         'password': '123',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '06 12345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -87,7 +87,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'testexample.com',
         'password': '123',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345235'
       })
       .end((err, res) => {
         assert(err === null);
@@ -116,9 +116,9 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
+        'emailAddress': 'f.test@example.com',
         'password': '',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -152,7 +152,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'Abcdefg123',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '06 12345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -160,7 +160,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(403);
         res.body.should.has.property('message')
-          .to.be.equal('User with specified email address already exists');
+          .to.be.equal('Er bestaat al een user met opgegeven email adres');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -181,9 +181,9 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
+        'emailAddress': 'd.elenbaas@test.nl',
         'password': 'Abcd1234E',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -191,7 +191,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(201);
         res.body.should.has.property('message')
-          .to.be.equal('User successfully registered');
+          .to.be.equal('User succesvol geregistreerd');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -335,7 +335,7 @@ describe('UC-206', function () {
         'isActive': true,
         'emailAddress': emailAddress,
         'password': password,
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345678'
       })
       .then(res => {
         assert(res.body.status === 201);
@@ -363,6 +363,7 @@ describe('UC-206', function () {
       })
       .then(res => {
         assert(res.body.status === 200);
+        assert(res.body.message === `User met ID ${id} is verwijderd`);
         return chai.request(server)
           .post('/api/login')
           .send({
