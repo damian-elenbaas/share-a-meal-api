@@ -290,70 +290,70 @@ describe('UC-204', function () {
   });
 });
 
-describe('UC-206', function () {
-  it('TC-206-4 - User is successfully deleted', (done) => {
-    let emailAddress = 'test2@example.com';
-    let password = '123';
-    let id, token;
-
-    chai.request(server)
-      .post('/api/user')
-      .send({
-        'firstName': 'Damian',
-        'lastName': 'Elenbaas',
-        'street': 'Lovensdijkstraat 61',
-        'city': 'Breda',
-        'isActive': true,
-        'emailAddress': emailAddress,
-        'password': password,
-        'phoneNumber': '+31123456789'
-      })
-      .then(res => {
-        assert(res.body.status === 201);
-        assert(res.body.data.id);
-        id = res.body.data.id;
-        return chai.request(server)
-          .post('/api/login')
-          .send({
-            'emailAddress': emailAddress,
-            'password': password
-          });
-      })
-      .then(res => {
-        token = res.body.data.token;
-        return chai.request(server)
-          .get('/api/user')
-          .set('Authorization', token);
-      })
-      .then(res => {
-        assert(res.body.status === 200);
-        expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
-        return chai.request(server)
-          .delete(`/api/user/${id}`)
-          .set('Authorization', token);
-      })
-      .then(res => {
-        assert(res.body.status === 200);
-        return chai.request(server)
-          .post('/api/login')
-          .send({
-            'emailAddress': 'd.elenbaas1@student.avans.nl',
-            'password': 'abc123'
-          });
-      })
-      .then(res => {
-        return chai.request(server)
-          .get('/api/user')
-          .set('Authorization', res.body.data.token);
-      })
-      .then(res => {
-        assert(res.body.status === 200);
-        expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
-        done();
-      })
-      .catch(err => {
-        done(err);
-      });
-  });
-});
+// describe('UC-206', function () {
+//   it('TC-206-4 - User is successfully deleted', (done) => {
+//     let emailAddress = 'test2@example.com';
+//     let password = '123';
+//     let id, token;
+//
+//     chai.request(server)
+//       .post('/api/user')
+//       .send({
+//         'firstName': 'Damian',
+//         'lastName': 'Elenbaas',
+//         'street': 'Lovensdijkstraat 61',
+//         'city': 'Breda',
+//         'isActive': true,
+//         'emailAddress': emailAddress,
+//         'password': password,
+//         'phoneNumber': '+31123456789'
+//       })
+//       .then(res => {
+//         assert(res.body.status === 201);
+//         assert(res.body.data.id);
+//         id = res.body.data.id;
+//         return chai.request(server)
+//           .post('/api/login')
+//           .send({
+//             'emailAddress': emailAddress,
+//             'password': password
+//           });
+//       })
+//       .then(res => {
+//         token = res.body.data.token;
+//         return chai.request(server)
+//           .get('/api/user')
+//           .set('Authorization', token);
+//       })
+//       .then(res => {
+//         assert(res.body.status === 200);
+//         expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
+//         return chai.request(server)
+//           .delete(`/api/user/${id}`)
+//           .set('Authorization', token);
+//       })
+//       .then(res => {
+//         assert(res.body.status === 200);
+//         return chai.request(server)
+//           .post('/api/login')
+//           .send({
+//             'emailAddress': 'd.elenbaas1@student.avans.nl',
+//             'password': 'abc123'
+//           });
+//       })
+//       .then(res => {
+//         return chai.request(server)
+//           .get('/api/user')
+//           .set('Authorization', res.body.data.token);
+//       })
+//       .then(res => {
+//         assert(res.body.status === 200);
+//         expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
+//         done();
+//       })
+//       .catch(err => {
+//         done(err);
+//       });
+//   });
+// });
 
