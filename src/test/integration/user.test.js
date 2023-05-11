@@ -3,6 +3,35 @@ const { expect } = require('chai');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../../app');
+const pool = require('../../utils/mysql-db');
+
+pool.getConnection((err, conn) => {
+  if(err) {
+    console.error(err);
+    process.exit();
+  }
+
+  conn.query('DELETE FROM user', (sqlError, sqlResults) => {
+    if(sqlError) {
+      console.error(sqlError);
+      process.exit();
+    }
+
+    conn.query(`INSERT INTO user VALUES 
+          (1,'Mariëtte','van den Dullemen',1,'m.vandullemen@server.nl','secret','','','',''),
+          (2,'John','Doe',1,'j.doe@server.com','secret','06 12425475','editor,guest','',''),
+          (3,'Herman','Huizinga',1,'h.huizinga@server.nl','secret','06-12345678','editor,guest','',''),
+          (4,'Marieke','Van Dam',0,'m.vandam@server.nl','secret','06-12345678','editor,guest','',''),
+          (5,'Henk','Tank',1,'h.tank@server.com','secret','06 12425495','editor,guest','','');`,
+      (sqlError, sqlResults) => {
+        if(sqlError) {
+          console.error(sqlError);
+          process.exit();
+        }
+      }
+    )
+  });
+});
 
 chai.should();
 chai.use(chaiHttp);
@@ -11,6 +40,7 @@ chai.use(require('chai-like'));
 chai.use(require('chai-things'));
 
 describe('UC-201', function () {
+
   it('TC-201-1 - Required field is missing', (done) => {
     chai
       .request(server)
@@ -23,7 +53,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'test@example.com',
         'password': '123',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '06 12345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -57,7 +87,7 @@ describe('UC-201', function () {
         'isActive': true,
         'emailAddress': 'testexample.com',
         'password': '123',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345235'
       })
       .end((err, res) => {
         assert(err === null);
@@ -86,9 +116,9 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
+        'emailAddress': 'f.test@example.com',
         'password': '',
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -120,9 +150,9 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': '123',
-        'phoneNumber': '+31123456789'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'Abcdefg123',
+        'phoneNumber': '06 12345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -130,7 +160,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(403);
         res.body.should.has.property('message')
-          .to.be.equal('User with specified email address already exists');
+          .to.be.equal('Er bestaat al een user met opgegeven email adres');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -151,9 +181,9 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
-        'password': '123',
-        'phoneNumber': '+31123456789'
+        'emailAddress': 'd.elenbaas@test.nl',
+        'password': 'Abcd1234E',
+        'phoneNumber': '0612345678'
       })
       .end((err, res) => {
         assert(err === null);
@@ -161,7 +191,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(201);
         res.body.should.has.property('message')
-          .to.be.equal('User succesfully registered');
+          .to.be.equal('User succesvol geregistreerd');
         res.body.should.has.property('data');
 
         let { data } = res.body;
@@ -188,14 +218,14 @@ describe('UC-202', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get('/api/user')
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -218,14 +248,14 @@ describe('UC-203', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get('/api/user/profile')
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -241,12 +271,11 @@ describe('UC-203', function () {
             data.should.has.property('city');
             data.should.has.property('isActive');
             data.should.has.property('emailAddress');
-            data.should.has.property('password');
             data.should.has.property('phoneNumber');
 
             done();
-          })
-      })
+          });
+      });
 
   });
 });
@@ -257,14 +286,14 @@ describe('UC-204', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get(`/api/user/2`)
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -292,8 +321,8 @@ describe('UC-204', function () {
 
 describe('UC-206', function () {
   it('TC-206-4 - User is successfully deleted', (done) => {
-    let emailAddress = 'test2@example.com';
-    let password = '123';
+    let emailAddress = 'f.test11231@example.com';
+    let password = 'Abcaew123';
     let id, token;
 
     chai.request(server)
@@ -306,7 +335,7 @@ describe('UC-206', function () {
         'isActive': true,
         'emailAddress': emailAddress,
         'password': password,
-        'phoneNumber': '+31123456789'
+        'phoneNumber': '0612345678'
       })
       .then(res => {
         assert(res.body.status === 201);
@@ -320,7 +349,7 @@ describe('UC-206', function () {
           });
       })
       .then(res => {
-        token = res.body.data.token;
+        token = 'Bearer ' + res.body.data.token;
         return chai.request(server)
           .get('/api/user')
           .set('Authorization', token);
@@ -334,17 +363,18 @@ describe('UC-206', function () {
       })
       .then(res => {
         assert(res.body.status === 200);
+        assert(res.body.message === `User met ID ${id} is verwijderd`);
         return chai.request(server)
           .post('/api/login')
           .send({
-            'emailAddress': 'd.elenbaas1@student.avans.nl',
-            'password': 'abc123'
+            'emailAddress': 'm.vandullemen@server.nl',
+            'password': 'secret'
           });
       })
       .then(res => {
         return chai.request(server)
           .get('/api/user')
-          .set('Authorization', res.body.data.token);
+          .set('Authorization', 'Bearer ' + res.body.data.token);
       })
       .then(res => {
         assert(res.body.status === 200);

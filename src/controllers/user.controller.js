@@ -1,12 +1,13 @@
-const logger = require('../utils/logger').logger;
-const utils = require('../utils/utils');
+const { logger, privateKey } = require('../utils/utils');
 const joi = require('joi');
-
-let database = require('../utils/database');
+const pool = require('../utils/mysql-db');
+const jwt = require('jsonwebtoken');
 
 const userSchema = joi.object({
   emailAddress: joi.string()
-    .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+    // Realistic email pattern, but not requested by design
+    // .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
+    .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
     .message('Invalid email address')
     .required(),
   firstName: joi.string()
@@ -17,422 +18,499 @@ const userSchema = joi.object({
     .required(),
   city: joi.string()
     .required(),
-  isActive: joi.boolean()
-    .required(),
+  isActive: joi.boolean(),
   password: joi.string()
-    .min(1)
+    .min(8)
+    .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/))
     .required(),
   phoneNumber: joi.string()
-    .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    // Realistic phone pattern, but not requested by design
+    // .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    .pattern(new RegExp(/^06[-\s]?\d{8}$/))
     .message('Invalid phone number')
-    .required(),
-  token: joi.string()
+    .required()
 })
 
 let user = {};
 
 /**
  * Function that creates a new user
- *
- * @param {object} body - body that contains emailAddress, firstName, lastName, street, city, isActive, password and phoneNumber
- * @param {Function} callback - callback that handles response
  */
-user.create = function (body, callback) {
+user.create = function (req, res) {
   logger.info('Creating user');
-  let result = {};
+
+  let body = req.body;
 
   const validation = userSchema.validate(body);
   if(validation.error) {
-    result.status = 400;
-    result.message = validation.error.details[0].message;
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': validation.error.details[0].message,
+      'data': {}
+    });
   }
 
-  logger.debug('Searching for existing user');
-  let existingUser = database.users.find((item) => item.emailAddress == body.emailAddress); 
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': err.message,
+        'data': {}
+      });
+    } else {
 
-  if(existingUser != undefined) {
-    logger.debug('Email address already in use');
-    result.status = 403;
-    result.message = 'User with specified email address already exists';
-    result.data = {};
-    callback(result);
-    return;
-  }
+      conn.query(
+        'INSERT INTO user (firstName, lastName, isActive, emailAddress, password, phoneNumber, street, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
+        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
+        (sqlError, sqlResults) => {
+          if(sqlError) {
+            if(sqlError.code == 'ER_DUP_ENTRY') {
+              logger.debug('Email address already in use');
+              return res.status(403).json({
+                'status': 403,
+                'message': 'Er bestaat al een user met opgegeven email adres',
+                'data': {}
+              })
+            } else {
+              return res.status(403).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              })
+            }
+          } else {
+            conn.query(`SELECT * FROM user WHERE id = ${sqlResults.insertId}`, (sqlError, sqlResults) => {
+              if(sqlError) {
+                return res.status(500).json({
+                  'status': 500,
+                  'message': 'Internal server error',
+                  'data': {}
+                })
+              } else {
+                return res.status(201).json({
+                  'status': 201,
+                  'message': 'User succesvol geregistreerd',
+                  'data': sqlResults[0]
+                });
+              }
+            });
+          }
+      });
 
-  logger.debug('Adding user to database');
-  let lastId = database.users[database.users.length - 1].id;
-  let newUser = {
-    'id': lastId + 1,
-    'firstName': body.firstName,
-    'lastName': body.lastName,
-    'street': body.street,
-    'city': body.city,
-    'isActive': body.isActive,
-    'emailAddress': body.emailAddress,
-    'password': body.password,
-    'phoneNumber': body.phoneNumber
-  };
-  database.users.push(newUser);
-
-  result.status = 201;
-  result.message = 'User succesfully registered';
-  result.data = newUser;
-  callback(result);
+    }
+    pool.releaseConnection(conn);
+  });
 }
 
 /**
  * Function that gets all existing users with setted filter options
- *
- * @param {string} token - token of logged in user
- * @param {object} query - object that can contain fitler properties
- * @param {Function} callback - callback that handles response
  */
-user.getAll = function (token, query, callback) {
-  logger.info('Getting all users')
-  let result = {};
+user.getAll = function (req, res) {
+  logger.info('Getting all users');
+  logger.info('Params:', req.query);
 
-  const filteredUsers = database.users.filter(item => item.hasOwnProperty('token') && item.token == token);
-  if(filteredUsers.length == 0) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = 'Invalid token';
-    result.data = {};
-    callback(result);
-    return;
+  const queryFields = Object.entries(req.query);
+
+  if(queryFields.length > 2) {
+    res.status(400).json({
+      'status': 400,
+      'message': 'Bad request. Maximum query count is 2.',
+      'data': {}
+    });
   }
 
-  logger.debug(`Query: ${query}`);
-
-  if(Object.keys(query).length > 0){
-    let data = database.users;
-
-    for (const [key, value] of Object.entries(query)) {
-      logger.debug(`Filtering on ${key} with ${value}`);
-      if(!data[0].hasOwnProperty(`${key}`)) {
-        logger.debug(`Property doesn't exists`);
-        result.status = 200;
-        result.message = 'All users';
-        result.data = {};
-        callback(result);
-        return;
+  if(queryFields.length > 0) {
+    logger.log('Filter fields found');
+    let schema = userSchema.describe().keys;
+    for(const [field, value] of queryFields) {
+      if(!Object.keys(schema).includes(field)) {
+        return res.status(400).json({
+          'status': 400,
+          'message': `Bad request. ${field} field does not exist`,
+          'data': {}
+        })
       }
-      data = data.filter(item => {
-        if(typeof item[`${key}`] === 'boolean') {
-          return item[`${key}`] === JSON.parse(value);
-        } else {
-          return item[`${key}`].toLowerCase().includes(value.toLowerCase());
-        }
-      });
     }
-
-    result.status = 200;
-    result.message = 'All users';
-    result.data = data;
-  } else {
-    result.status = 200;
-    result.message = 'All users';
-    result.data = database.users;
   }
 
-  logger.debug('Removing password and token from data');
-  // Doens't work without copy: removes password and token permanently because of reference to database.users
-  // Dirty hack to make a copy without reference
-  result.data = JSON.parse(JSON.stringify(result.data));
-  result.data = result.data.map((item) => {
-    delete item.password;
-    delete item.token;
+  let query = req.query;
 
-    return item;
+  // TODO: Add filtering feature to DB
+
+  pool.getConnection((err, conn) => {
+    if(err) {
+      res.status(500).json({
+        'status': 500,
+        'message': err.message,
+        'data': {}
+      })
+    } else {
+      conn.query(
+        'SELECT * FROM `user`',
+        (err, results, fields) => {
+          if(err) {
+            res.status(500).json({
+              'status': 500,
+              'message': err.message,
+              'data': {}
+            })
+          } else {
+
+            let users = [];
+            results.forEach((u) => {
+              const { password, ...userinfo } = u;
+              users.push(userinfo);
+            })
+
+            res.status(200).json({
+              'status': 200,
+              'message': 'Alle users',
+              'data': users 
+            })
+          }
+        }
+      )
+    }
+    pool.releaseConnection(conn);
   })
-
-  callback(result);
 }
 
 /**
  * Function that logs in user
- *
- * @param {object} credentials - object that contains emailAddress and password
- * @param {Function} callback - callback function that handles response
  */
-user.login = function (credentials, callback) {
+user.login = function (req, res) {
+  logger.log(`[POST] /api/login`);
   logger.info('Logging into user')
-  let result = {};
+
+  let credentials = req.body;
 
   logger.debug(`Credentials: ${credentials}`);
   if(!(credentials.hasOwnProperty('emailAddress') 
     && credentials.hasOwnProperty('password'))
   ) {
     logger.debug('Invalid body');
-    result.status = 400;
-    result.message = "Invalid body";
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': 'Invalid body',
+      'data': {}
+    });
   }
 
-  const filtered = database.users.filter(
-    item => item.emailAddress == credentials.emailAddress
-  );
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  if(filtered.length == 0) {
-    logger.debug('Account does not exist');
-    result.status = 404;
-    result.message = "Account with specified email address does not exist";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  const user = filtered[0];
-
-  if(user.password == credentials.password) {
-    logger.debug('Credentials correct, generating token');
-    let token = utils.generateRandomString(20);
-    database.users.forEach((item) => {
-      if(item.emailAddress == user.emailAddress) {
-        item.token = token;
+    conn.query('SELECT * FROM user WHERE emailAddress = ?', [credentials.emailAddress], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
       }
-    })
 
-    user.token = token;
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Er bestaat geen account met opgegeven email adres',
+          'data': {}
+        });
+      }
 
-    result.status = 200;
-    result.message = "Logged in succesfully";
-    result.data = user;
-  } else {
-    logger.debug('Invalid credentials');
-    result.status = 400;
-    result.message = "Invalid credentials";
-    result.data = {};
-  }
+      const { password, ...user } = sqlResults[0];
 
-  callback(result);
-  return;
+      if(credentials.password == password) {
+        logger.log('Signing token');
+        jwt.sign({ 'id': user.id }, privateKey, (err, token) => {
+          if(err) {
+            return res.status(500).json({
+              'status': 500,
+              'message': 'Internal server error',
+              'data': {}
+            });
+          }
+          return res.status(200).json({
+            'status': 200,
+            'message': 'Succesvol ingelogd',
+            'data': { ...user, token }
+          })
+        });
+      } else {
+        return res.status(404).json({
+          'status': 400,
+          'message': 'Invalide gegevens',
+          'data': {}
+        });
+      }
+    });
+    pool.releaseConnection(conn);
+  });
 }
 
 /**
  * Function that updates user information
- * 
- * @param {string} token - token of logged in user
- * @param {number} userid - id of user you want to update
- * @param {Object} updatedUser - user body with new data
- * @param {Function} callback - callback function that handles response
  */
-user.update = function (token, userid, updatedUser, callback) {
+user.update = function (req, res) {
+  logger.log(`[PUT] /api/user/${req.params.userid}`);
   logger.info('Updating user');
-  let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {};
-    callback(result);
-    return;
-  }
+  let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
-  let user = database.users.find(item => item.id == userid);
+  const required = joi.object({
+    emailAddress: joi.string()
+    // Realistic email pattern, but not requested by design
+    // .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
+    .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
+    .message('Invalid email address')
+    .required(),
+    firstName: joi.string(),
+    lastName: joi.string(),
+    street: joi.string(),
+    city: joi.string(),
+    isActive: joi.boolean(),
+    password: joi.string()
+    .min(8)
+    .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/)),
+    phoneNumber: joi.string()
+    // Realistic phone pattern, but not requested by design
+    // .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
+    .pattern(new RegExp(/^06[-\s]?\d{8}$/))
+    .message('Invalid phone number')
+  })
 
-  if(user === undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = "User not found";
-    result.data = {};
-    callback(result);
-    return;
-  }
 
-  if(!(user.hasOwnProperty('token') && user.token === token)) {
-    logger.debug('Not the owner of the user');
-    result.status = 403;
-    result.message = "You are not the owner of the user";
-    result.data = {};
-    callback(result);
-    return;
-  } 
-  
-  const validation = userSchema.validate(updatedUser);
+  const validation = required.validate(req.body);
   if(validation.error) {
-    result.status = 400;
-    result.message = validation.error.details[0].message;
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': validation.error.details[0].message,
+      'data': {}
+    });
   }
 
-  logger.debug('Searching for existing user with specified email address');
-  let existingUser = database.users.find(
-    (item) => (
-      item.emailAddress == updatedUser.emailAddress && 
-      item.id != userid
-    )
-  ); 
-
-  if(existingUser != undefined) {
-    logger.debug('Existing user found');
-    result.status = 403;
-    result.message = 'User with specified email address already exists';
-    result.data = {};
-    callback(result);
-    return;
+  if(userid != payloadId) {
+    return res.status(403).json({
+      'status': 403,
+      'message': 'Je bent niet de eigenaar van de user',
+      'data': {}
+    });
   }
 
-  logger.debug('No email conflict found, updating user');
-  user.firstName = updatedUser.firstName;
-  user.lastName = updatedUser.lastName;
-  user.street = updatedUser.street;
-  user.city = updatedUser.city;
-  user.isActive = updatedUser.isActive;
-  user.emailAddress = updatedUser.emailAddress;
-  user.password = updatedUser.password;
-  user.phoneNumber = updatedUser.phoneNumber;
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  result.status = 200;
-  result.message = "User successfully updated";
-  result.data = user; 
-  callback(result);
-}
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+      
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'User niet gevonden',
+          'data': {}
+        });
+      }
 
-/**
- * Function that checks if given token is valid
- *
- * @param {string} token - token of logged in user
- * @returns {boolean} isValid
- */
-user.isTokenValid = function (token) {
-  logger.debug('Checking token');
-  const filtered = database.users.filter(
-    item => item.token == token
-  );
-  return filtered.length != 0;
+      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ? WHERE id = ?',
+        [req.body.firstName, req.body.lastName, req.body.isActive, req.body.emailAddress, req.body.password, req.body.phoneNumber, req.body.street, req.body.city, userid],
+        (sqlError, sqlResults) => {
+          if(sqlError) {
+            return res.status(403).json({
+              'status': 403,
+              'message': 'User met gegeven email adres bestaat al',
+              'data': {}
+            });
+          }
+
+          return res.status(200).json({
+            'status': 200,
+            'message': 'User succesvol geüpdatet',
+            'data': {}
+          });
+      });
+    });
+    pool.releaseConnection(conn);
+  });
 }
 
 /**
  * Function that gets user by given token
- *
- * @param {string} token - token of logged in user
- * @param {Function} callback - callback that handles response
  */
-user.getByToken = function (token, callback) {
+user.getByToken = function (req, res) {
   logger.info('Getting user profile by token');
-  let result = {};
 
-  const filtered = database.users.filter(
-    item => item.token == token
-  );
+  let id = res.locals.decoded.id;
 
-  if(filtered.length == 0) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {};
-  } else {
-    logger.debug('Profile found');
-    result.status = 200;
-    result.message = "Profile succesfully received";
-    result.data = filtered[0];
-  }
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  callback(result);
+    conn.query('SELECT * FROM user WHERE id = ?', [id], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+
+      if(sqlResults.length == 0) {
+        return res.status(401).json({
+          'status': 401,
+          'message': 'Invalid token',
+          'data': {}
+        });
+      }
+
+      let user = sqlResults[0];
+
+      res.status(200).json({
+        'status': 200,
+        'message': 'Profiel gevonden',
+        'data': user 
+      })
+    })
+    pool.releaseConnection(conn);
+  });
 }
 
 /**
  * Function that gets user by given id
- *
- * @param {string} token - token of logged in user
- * @param {number} id - id of user
- * @param {Function} callback - callback that handles response
  */
-user.getById = function (token, id, callback) {
+user.getById = function (req, res) {
+  logger.log(`[GET] /api/user/${req.params.userid}`);
+
   logger.info('Getting user by id');
-  let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+  let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
-  let user = database.users.find(
-    item => item.id == id
-  );
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  if(user == undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = "User not found";
-    result.data = {}; 
-  } else {
-    logger.debug('User found');
-    // Dirty hack to make a copy without reference
-    user = JSON.parse(JSON.stringify(user));
-    delete user.password;
-    delete user.token;
-    
-    result.status = 200;
-    result.message = "User succesfully found";
-    result.data = user;
-  }
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
 
-  callback(result);
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'User niet gevonden',
+          'data': {}
+        });
+      }
+
+      let { password, ...userinfo } = sqlResults[0];
+      
+      if(userid == payloadId) {
+        userinfo = { ...userinfo, password };
+      }
+
+      return res.status(200).json({
+        'status': 200,
+        'message': 'User succesvol gevonden',
+        'data': userinfo 
+      });
+    });
+    pool.releaseConnection(conn);
+  });
 }
 
 /**
  * Deletes user with given id
- * @param {string} token - Token of logged in user
- * @param {number} userid - id of user you want to delete
- * @param {Function} callback - callback that handles the response 
   */
-user.delete = function (token, userid, callback) {
+user.delete = function (req, res) {
+  logger.log(`[DELETE] /api/user/${req.params.userid}`);
   logger.info('Deleting user');
-  let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Token invalid');
-    result.status = 401;
-    result.message = 'Invalid token';
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+  let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
-  let user = database.users.find(
-    item => item.id == userid 
-  );
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    } 
 
-  if(user == undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = `User with ID ${userid} is not found`;
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
 
-  if(user.token != token) {
-    logger.debug('Not the owner of the user');
-    result.status = 403;
-    result.message = `You are not the owner of user with ID ${userid}`;
-    result.data = {}; 
-    callback(result);
-    return;
-  }
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': `User met ID ${userid} is niet gevonden`,
+          'data': {}
+        });
+      }
 
-  database.users = database.users.filter(item => item.id != userid);
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': `Je bent niet de eigenaar van de user`,
+          'data': {}
+        });
+      }
+      
+      conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+        if(sqlError) {
+          return res.status(500).json({
+            'status': 500,
+            'message': 'Internal server error',
+            'data': {}
+          });
+        }
 
-  logger.debug('User deleted');
-  result.status = 200;
-  result.message = `User with ID ${userid} is deleted`;
-  result.data = {}; 
-  callback(result);
+        return res.status(200).json({
+          'status': 200,
+          'message': `User met ID ${userid} is verwijderd`,
+          'data': {}
+        });
+      });
+    })
+    pool.releaseConnection(conn);
+  });
 }
-
-
 
 module.exports = user;

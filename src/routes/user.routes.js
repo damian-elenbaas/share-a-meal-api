@@ -1,116 +1,27 @@
 const express = require('express');
 const logger = require('../utils/logger').logger;
 const router = express.Router();
+const auth = require('../controllers/auth.controller');
 const user = require('../controllers/user.controller');
 
 router.use(express.json());
 
 // PUT: Update logged in user
-router.put('/:userid', (req, res) => {
-  logger.log(`[PUT] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.update(token, id, req.body, (response) => {
-    res.status(response.status).json(response);
-  })
-});
+router.put('/:userid', auth.validateToken, user.update);
 
 // DELETE: Delete logged in user
-router.delete('/:userid', (req, res) => {
-  logger.log(`[DELETE] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.delete(token, id, (response) => {
-    res.status(response.status).json(response);
-  })
-});
+router.delete('/:userid', auth.validateToken, user.delete);
 
 // GET: Get logged in user
-router.get('/profile', (req, res) => {
-  logger.log(`[GET] /api/user/profile`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  user.getByToken(token, (result) => {
-    res.status(result.status).json(result);
-  })
-});
+router.get('/profile', auth.validateToken, user.getByToken);
 
 // GET: Get all users
-router.get('/', (req, res) => {
-  logger.log(`[GET] /api/user/`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  if(req.params.length > 2) {
-    res.status(400).json({
-      'status': 400,
-      'message': 'Bad request. Maximum query count is 2.',
-      'data': {}
-    })
-  }
-
-  user.getAll(token, req.query, function (result) {
-    res.status(result.status).json(result);
-  });
-});
+router.get('/', auth.validateToken, user.getAll);
 
 // POST: Create user
-router.post('/', (req, res) => {
-  logger.log(`[POST] /api/user`);
-
-  user.create(req.body, (result) => {
-    res.status(result.status).json(result);
-  });
-});
+router.post('/', user.create);
 
 // GET: Get user profile by id
-router.get('/:userid', (req, res) => {
-  logger.log(`[GET] /api/user/${req.params.userid}`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  let id = req.params.userid;
-
-  user.getById(token, id, (result) => {
-    res.status(result.status).json(result);
-  })
-});
-
-function sendAuthorizationError(res) {
-  logger.debug('Send authorization error');
-  res.status(400).json({
-    'status': 400,
-    'message': 'Authorization header required',
-    'data': {}
-  });
-  return;
-}
+router.get('/:userid', auth.validateToken, user.getById);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const logger = require('./src/utils/logger').logger;
-const port = 3000;
+const port = process.env.PORT || 3000;
 const api = require('./src/routes/api.routes');
 const user = require('./src/routes/user.routes');
 
@@ -16,7 +16,7 @@ app.use('*', (req, res) => {
   });
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   logger.info(`Example app listening on port ${port}`);
 });
 
