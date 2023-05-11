@@ -152,10 +152,17 @@ user.getAll = function (req, res) {
               'data': {}
             })
           } else {
+
+            let users = [];
+            results.forEach((u) => {
+              const { password, ...userinfo } = u;
+              users.push(userinfo);
+            })
+
             res.status(200).json({
               'status': 200,
               'message': 'All users',
-              'data': results
+              'data': users 
             })
           }
         }
@@ -352,13 +359,11 @@ user.getByToken = function (req, res) {
       }
 
       let user = sqlResults[0];
-      
-      const { password, ...userInfo } = user;
 
       res.status(200).json({
         'status': 200,
         'message': 'Profile found',
-        'data': userInfo 
+        'data': user 
       })
     })
     pool.releaseConnection(conn);
@@ -374,6 +379,7 @@ user.getById = function (req, res) {
   logger.info('Getting user by id');
 
   let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -401,10 +407,16 @@ user.getById = function (req, res) {
         });
       }
 
+      let { password, ...userinfo } = sqlResults[0];
+
+      if(userid == payloadId) {
+        userinfo.password = password;
+      }
+      
       return res.status(200).json({
         'status': 200,
         'message': 'User successfully found',
-        'data': sqlResults[0]
+        'data': userinfo 
       });
     });
     pool.releaseConnection(conn);
