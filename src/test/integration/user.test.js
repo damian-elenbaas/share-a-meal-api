@@ -161,7 +161,7 @@ describe('UC-201', function () {
         res.body.should.has.property('status')
           .to.be.equal(201);
         res.body.should.has.property('message')
-          .to.be.equal('User succesfully registered');
+          .to.be.equal('User successfully registered');
         res.body.should.has.property('data');
 
         let { data } = res.body;
