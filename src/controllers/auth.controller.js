@@ -19,13 +19,11 @@ auth.validateToken = (req, res, next) => {
   // Remove Bearer in front of token
   token = token.substring('Bearer '.length);
 
-  console.log(req);
-
   jwt.verify(token, privateKey, (err, decoded) => {
     if(err) {
       return res.status(500).json({
         'status': 500,
-        'message': 'Internal server error jwt',
+        'message': 'Internal server error',
         'data': {}
       });
     }

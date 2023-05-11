@@ -9,7 +9,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   idleTimeout: 60000,
-  queueLimit: 0
+  queueLimit: 0,
+  multipleStatements: true
 });
 
 module.exports = pool;

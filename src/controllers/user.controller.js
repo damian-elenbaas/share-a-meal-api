@@ -3,9 +3,6 @@ const joi = require('joi');
 const pool = require('../utils/mysql-db');
 const jwt = require('jsonwebtoken');
 
-let database = require('../utils/database');
-
-
 const userSchema = joi.object({
   emailAddress: joi.string()
     .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
@@ -20,9 +17,9 @@ const userSchema = joi.object({
   city: joi.string()
     .required(),
   isActive: joi.boolean(),
-  // TODO: minsts 1 hoofd letter en 1 cijfer
   password: joi.string()
     .min(8)
+    .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/))
     .required(),
   phoneNumber: joi.string()
     .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
@@ -35,9 +32,6 @@ let user = {};
 
 /**
  * Function that creates a new user
- *
- * @param {object} body - body that contains emailAddress, firstName, lastName, street, city, isActive, password and phoneNumber
- * @param {Function} callback - callback that handles response
  */
 user.create = function (req, res) {
   logger.info('Creating user');
@@ -67,7 +61,6 @@ user.create = function (req, res) {
         [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
         (sqlError, sqlResults) => {
           if(sqlError) {
-            logger.error('SQL error: ', sqlError);
             if(sqlError.code == 'ER_DUP_ENTRY') {
               logger.debug('Email address already in use');
               return res.status(403).json({
@@ -85,7 +78,6 @@ user.create = function (req, res) {
           } else {
             conn.query(`SELECT * FROM user WHERE id = ${sqlResults.insertId}`, (sqlError, sqlResults) => {
               if(sqlError) {
-                logger.error('SQL error: ', sqlError);
                 return res.status(500).json({
                   'status': 500,
                   'message': 'Internal server error',
@@ -103,6 +95,7 @@ user.create = function (req, res) {
       });
 
     }
+    pool.releaseConnection(conn);
   });
 }
 
@@ -168,6 +161,7 @@ user.getAll = function (req, res) {
         }
       )
     }
+    pool.releaseConnection(conn);
   })
 }
 
@@ -194,7 +188,6 @@ user.login = function (req, res) {
 
   pool.getConnection((err, conn) => {
     if(err) {
-      logger.error('Pool error:', err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -204,7 +197,6 @@ user.login = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE emailAddress = ?', [credentials.emailAddress], (sqlError, sqlResults) => {
       if(sqlError) {
-        logger.error('SQL error:', sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
@@ -226,7 +218,6 @@ user.login = function (req, res) {
         logger.log('Signing token');
         jwt.sign({ 'id': user.id }, privateKey, (err, token) => {
           if(err) {
-            logger.error('JWT error:', err);
             return res.status(500).json({
               'status': 500,
               'message': 'Internal server error',
@@ -247,6 +238,7 @@ user.login = function (req, res) {
         });
       }
     });
+    pool.releaseConnection(conn);
   });
 }
 
@@ -257,15 +249,22 @@ user.update = function (req, res) {
   logger.log(`[PUT] /api/user/${req.params.userid}`);
   logger.info('Updating user');
 
-  // TODO: Implement JWT validation
-
   let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
-  const validation = userSchema.validate(body);
+  const validation = userSchema.validate(req.body);
   if(validation.error) {
     return res.status(400).json({
       'status': 400,
       'message': validation.error.details[0].message,
+      'data': {}
+    });
+  }
+
+  if(userid != payloadId) {
+    return res.status(403).json({
+      'status': 403,
+      'message': 'You are not the owner of the user',
       'data': {}
     });
   }
@@ -296,8 +295,8 @@ user.update = function (req, res) {
         });
       }
 
-      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ?',
-        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city],
+      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ? WHERE id = ?',
+        [req.body.firstName, req.body.lastName, req.body.isActive, req.body.emailAddress, req.body.password, req.body.phoneNumber, req.body.street, req.body.city, userid],
         (sqlError, sqlResults) => {
           if(sqlError) {
             return res.status(403).json({
@@ -314,6 +313,7 @@ user.update = function (req, res) {
           });
       });
     });
+    pool.releaseConnection(conn);
   });
 }
 
@@ -327,7 +327,6 @@ user.getByToken = function (req, res) {
 
   pool.getConnection((err, conn) => {
     if(err) {
-      logger.error('Pool error:', err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -337,7 +336,6 @@ user.getByToken = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE id = ?', [id], (sqlError, sqlResults) => {
       if(sqlError) {
-        logger.error('SQL error:', sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
@@ -363,6 +361,7 @@ user.getByToken = function (req, res) {
         'data': userInfo 
       })
     })
+    pool.releaseConnection(conn);
   });
 }
 
@@ -375,17 +374,6 @@ user.getById = function (req, res) {
   logger.info('Getting user by id');
 
   let userid = req.params.userid;
-
-  // TODO: Implement JWT
-  //
-  // if(!this.isTokenValid(token)) {
-  //   logger.debug('Invalid token');
-  //   result.status = 401;
-  //   result.message = "Invalid token";
-  //   result.data = {}; 
-  //   callback(result);
-  //   return;
-  // }
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -419,6 +407,7 @@ user.getById = function (req, res) {
         'data': sqlResults[0]
       });
     });
+    pool.releaseConnection(conn);
   });
 }
 
@@ -429,21 +418,11 @@ user.delete = function (req, res) {
   logger.log(`[DELETE] /api/user/${req.params.userid}`);
   logger.info('Deleting user');
 
-  // TODO: Implement JWT
-  // if(!this.isTokenValid(token)) {
-  //   logger.debug('Token invalid');
-  //   result.status = 401;
-  //   result.message = 'Invalid token';
-  //   result.data = {}; 
-  //   callback(result);
-  //   return;
-  // }
-
   let userid = req.params.userid;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
-      logger.error('Pool error: ', err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -453,7 +432,6 @@ user.delete = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
       if(sqlError) {
-        logger.error('SQL error: ', sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
@@ -469,20 +447,16 @@ user.delete = function (req, res) {
         });
       }
 
-      // TODO: Check if current user is owner of requested user (403)
-      //
-      // if(user.token != token) {
-      //   logger.debug('Not the owner of the user');
-      //   result.status = 403;
-      //   result.message = `You are not the owner of user with ID ${userid}`;
-      //   result.data = {}; 
-      //   callback(result);
-      //   return;
-      // }
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': `You are not the owner of the user`,
+          'data': {}
+        });
+      }
       
       conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
         if(sqlError) {
-          logger.error('SQL error: ', sqlError);
           return res.status(500).json({
             'status': 500,
             'message': 'Internal server error',
@@ -497,6 +471,7 @@ user.delete = function (req, res) {
         });
       });
     })
+    pool.releaseConnection(conn);
   });
 }
 

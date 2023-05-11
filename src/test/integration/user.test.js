@@ -3,6 +3,35 @@ const { expect } = require('chai');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const server = require('../../../app');
+const pool = require('../../utils/mysql-db');
+
+pool.getConnection((err, conn) => {
+  if(err) {
+    console.error(err);
+    process.exit();
+  }
+
+  conn.query('DELETE FROM user', (sqlError, sqlResults) => {
+    if(sqlError) {
+      console.error(sqlError);
+      process.exit();
+    }
+
+    conn.query(`INSERT INTO user VALUES 
+          (1,'Mariëtte','van den Dullemen',1,'m.vandullemen@server.nl','secret','','','',''),
+          (2,'John','Doe',1,'j.doe@server.com','secret','06 12425475','editor,guest','',''),
+          (3,'Herman','Huizinga',1,'h.huizinga@server.nl','secret','06-12345678','editor,guest','',''),
+          (4,'Marieke','Van Dam',0,'m.vandam@server.nl','secret','06-12345678','editor,guest','',''),
+          (5,'Henk','Tank',1,'h.tank@server.com','secret','06 12425495','editor,guest','','');`,
+      (sqlError, sqlResults) => {
+        if(sqlError) {
+          console.error(sqlError);
+          process.exit();
+        }
+      }
+    )
+  });
+});
 
 chai.should();
 chai.use(chaiHttp);
@@ -11,6 +40,7 @@ chai.use(require('chai-like'));
 chai.use(require('chai-things'));
 
 describe('UC-201', function () {
+
   it('TC-201-1 - Required field is missing', (done) => {
     chai
       .request(server)
@@ -121,7 +151,7 @@ describe('UC-201', function () {
         'city': 'Breda',
         'isActive': true,
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': '123',
+        'password': 'Abcdefg123',
         'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
@@ -152,7 +182,7 @@ describe('UC-201', function () {
         'city': 'Breda',
         'isActive': true,
         'emailAddress': 'test@example.com',
-        'password': '123',
+        'password': 'Abcd1234E',
         'phoneNumber': '+31123456789'
       })
       .end((err, res) => {
@@ -188,14 +218,14 @@ describe('UC-202', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get('/api/user')
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -218,14 +248,14 @@ describe('UC-203', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get('/api/user/profile')
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -241,12 +271,11 @@ describe('UC-203', function () {
             data.should.has.property('city');
             data.should.has.property('isActive');
             data.should.has.property('emailAddress');
-            data.should.has.property('password');
             data.should.has.property('phoneNumber');
 
             done();
-          })
-      })
+          });
+      });
 
   });
 });
@@ -257,14 +286,14 @@ describe('UC-204', function () {
       .request(server)
       .post('/api/login')
       .send({
-        'emailAddress': 'd.elenbaas1@student.avans.nl',
-        'password': 'abc123'
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
       .end((err, res) => {
         chai
           .request(server)
           .get(`/api/user/2`)
-          .set('Authorization', res.body.data.token)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
           .end((err, res) => {
             assert(err === null);
             res.body.should.be.an('object');
@@ -290,70 +319,70 @@ describe('UC-204', function () {
   });
 });
 
-// describe('UC-206', function () {
-//   it('TC-206-4 - User is successfully deleted', (done) => {
-//     let emailAddress = 'test2@example.com';
-//     let password = '123';
-//     let id, token;
-//
-//     chai.request(server)
-//       .post('/api/user')
-//       .send({
-//         'firstName': 'Damian',
-//         'lastName': 'Elenbaas',
-//         'street': 'Lovensdijkstraat 61',
-//         'city': 'Breda',
-//         'isActive': true,
-//         'emailAddress': emailAddress,
-//         'password': password,
-//         'phoneNumber': '+31123456789'
-//       })
-//       .then(res => {
-//         assert(res.body.status === 201);
-//         assert(res.body.data.id);
-//         id = res.body.data.id;
-//         return chai.request(server)
-//           .post('/api/login')
-//           .send({
-//             'emailAddress': emailAddress,
-//             'password': password
-//           });
-//       })
-//       .then(res => {
-//         token = res.body.data.token;
-//         return chai.request(server)
-//           .get('/api/user')
-//           .set('Authorization', token);
-//       })
-//       .then(res => {
-//         assert(res.body.status === 200);
-//         expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
-//         return chai.request(server)
-//           .delete(`/api/user/${id}`)
-//           .set('Authorization', token);
-//       })
-//       .then(res => {
-//         assert(res.body.status === 200);
-//         return chai.request(server)
-//           .post('/api/login')
-//           .send({
-//             'emailAddress': 'd.elenbaas1@student.avans.nl',
-//             'password': 'abc123'
-//           });
-//       })
-//       .then(res => {
-//         return chai.request(server)
-//           .get('/api/user')
-//           .set('Authorization', res.body.data.token);
-//       })
-//       .then(res => {
-//         assert(res.body.status === 200);
-//         expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
-//         done();
-//       })
-//       .catch(err => {
-//         done(err);
-//       });
-//   });
-// });
+describe('UC-206', function () {
+  it('TC-206-4 - User is successfully deleted', (done) => {
+    let emailAddress = 'f.test11231@example.com';
+    let password = 'Abcaew123';
+    let id, token;
+
+    chai.request(server)
+      .post('/api/user')
+      .send({
+        'firstName': 'Damian',
+        'lastName': 'Elenbaas',
+        'street': 'Lovensdijkstraat 61',
+        'city': 'Breda',
+        'isActive': true,
+        'emailAddress': emailAddress,
+        'password': password,
+        'phoneNumber': '+31123456789'
+      })
+      .then(res => {
+        assert(res.body.status === 201);
+        assert(res.body.data.id);
+        id = res.body.data.id;
+        return chai.request(server)
+          .post('/api/login')
+          .send({
+            'emailAddress': emailAddress,
+            'password': password
+          });
+      })
+      .then(res => {
+        token = 'Bearer ' + res.body.data.token;
+        return chai.request(server)
+          .get('/api/user')
+          .set('Authorization', token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
+        return chai.request(server)
+          .delete(`/api/user/${id}`)
+          .set('Authorization', token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        return chai.request(server)
+          .post('/api/login')
+          .send({
+            'emailAddress': 'm.vandullemen@server.nl',
+            'password': 'secret'
+          });
+      })
+      .then(res => {
+        return chai.request(server)
+          .get('/api/user')
+          .set('Authorization', 'Bearer ' + res.body.data.token);
+      })
+      .then(res => {
+        assert(res.body.status === 200);
+        expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
+        done();
+      })
+      .catch(err => {
+        done(err);
+      });
+  });
+});
 

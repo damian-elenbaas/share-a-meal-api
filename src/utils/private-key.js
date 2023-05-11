@@ -1,3 +1,3 @@
-const privateKey = 'wegEGqf352,3Aek';
+const privateKey = process.env.PRIVATE_KEY || 'wegEGqf352,3Aek';
 
 module.exports = privateKey;

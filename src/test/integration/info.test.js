@@ -21,6 +21,7 @@ describe('Server Info', function () {
         data.should.be.an('object');
         data.should.has.property('studentName').to.be.equal('Damian Elenbaas');
         data.should.has.property('studentNumber').to.be.equal(2198478);
+        data.should.has.property('description');
         done();
       });
   });
