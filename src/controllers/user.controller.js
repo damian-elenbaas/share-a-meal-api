@@ -323,8 +323,7 @@ user.update = function (req, res) {
 user.getByToken = function (req, res) {
   logger.info('Getting user profile by token');
 
-  let id =  res.locals.decoded;
-  logger.log(id);
+  let id = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -365,11 +364,6 @@ user.getByToken = function (req, res) {
       })
     })
   });
-
-  logger.debug('Profile found');
-  result.status = 200;
-  result.message = "Profile succesfully received";
-  result.data = filtered[0];
 }
 
 /**

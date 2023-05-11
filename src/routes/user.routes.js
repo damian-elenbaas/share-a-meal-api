@@ -13,19 +13,7 @@ router.put('/:userid', auth.validateToken, user.update);
 router.delete('/:userid', auth.validateToken, user.delete);
 
 // GET: Get logged in user
-router.get('/profile', (req, res) => {
-  logger.log(`[GET] /api/user/profile`);
-
-  let token = req.get('Authorization');
-  if(token == undefined) {
-    sendAuthorizationError(res);
-    return;
-  }
-
-  user.getByToken(token, (result) => {
-    res.status(result.status).json(result);
-  })
-});
+router.get('/profile', auth.validateToken, user.getByToken);
 
 // GET: Get all users
 router.get('/', auth.validateToken, user.getAll);
