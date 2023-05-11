@@ -263,29 +263,29 @@ user.update = function (req, res) {
   let payloadId = res.locals.decoded.id;
 
   const required = joi.object({
-  emailAddress: joi.string()
+    emailAddress: joi.string()
     // Realistic email pattern, but not requested by design
     // .pattern(new RegExp(/^[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,}$/))
     .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
     .message('Invalid email address')
     .required(),
-  firstName: joi.string(),
-  lastName: joi.string(),
-  street: joi.string(),
-  city: joi.string(),
-  isActive: joi.boolean(),
-  password: joi.string()
+    firstName: joi.string(),
+    lastName: joi.string(),
+    street: joi.string(),
+    city: joi.string(),
+    isActive: joi.boolean(),
+    password: joi.string()
     .min(8)
     .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/)),
-  phoneNumber: joi.string()
+    phoneNumber: joi.string()
     // Realistic phone pattern, but not requested by design
     // .pattern(new RegExp(/^\+(?:[0-9] ?){6,14}[0-9]$/))
     .pattern(new RegExp(/^06[-\s]?\d{8}$/))
     .message('Invalid phone number')
-})
+  })
 
 
-  const validation = userSchema.validate(req.body);
+  const validation = required.validate(req.body);
   if(validation.error) {
     return res.status(400).json({
       'status': 400,
