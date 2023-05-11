@@ -219,85 +219,70 @@ user.login = function (credentials, callback) {
 
 /**
  * Function that updates user information
- * 
- * @param {string} token - token of logged in user
- * @param {number} userid - id of user you want to update
- * @param {Object} updatedUser - user body with new data
- * @param {Function} callback - callback function that handles response
  */
-user.update = function (token, userid, updatedUser, callback) {
+user.update = function (req, res) {
+  logger.log(`[PUT] /api/user/${req.params.userid}`);
   logger.info('Updating user');
   let result = {};
 
-  if(!this.isTokenValid(token)) {
-    logger.debug('Invalid token');
-    result.status = 401;
-    result.message = "Invalid token";
-    result.data = {};
-    callback(result);
-    return;
-  }
+  // TODO: Implement JWT validation
 
-  let user = database.users.find(item => item.id == userid);
+  let userid = req.params.userid;
 
-  if(user === undefined) {
-    logger.debug('User not found');
-    result.status = 404;
-    result.message = "User not found";
-    result.data = {};
-    callback(result);
-    return;
-  }
-
-  if(!(user.hasOwnProperty('token') && user.token === token)) {
-    logger.debug('Not the owner of the user');
-    result.status = 403;
-    result.message = "You are not the owner of the user";
-    result.data = {};
-    callback(result);
-    return;
-  } 
-  
-  const validation = userSchema.validate(updatedUser);
+  const validation = userSchema.validate(body);
   if(validation.error) {
-    result.status = 400;
-    result.message = validation.error.details[0].message;
-    result.data = {};
-    callback(result);
-    return;
+    return res.status(400).json({
+      'status': 400,
+      'message': validation.error.details[0].message,
+      'data': {}
+    });
   }
 
-  logger.debug('Searching for existing user with specified email address');
-  let existingUser = database.users.find(
-    (item) => (
-      item.emailAddress == updatedUser.emailAddress && 
-      item.id != userid
-    )
-  ); 
+  pool.getConnection((err, conn) => {
+    if(err) {
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
 
-  if(existingUser != undefined) {
-    logger.debug('Existing user found');
-    result.status = 403;
-    result.message = 'User with specified email address already exists';
-    result.data = {};
-    callback(result);
-    return;
-  }
+    conn.query('SELECT * FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
+      if(sqlError) {
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+      
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'User not found',
+          'data': {}
+        });
+      }
 
-  logger.debug('No email conflict found, updating user');
-  user.firstName = updatedUser.firstName;
-  user.lastName = updatedUser.lastName;
-  user.street = updatedUser.street;
-  user.city = updatedUser.city;
-  user.isActive = updatedUser.isActive;
-  user.emailAddress = updatedUser.emailAddress;
-  user.password = updatedUser.password;
-  user.phoneNumber = updatedUser.phoneNumber;
+      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ?',
+        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city],
+        (sqlError, sqlResults) => {
+          if(sqlError) {
+            return res.status(403).json({
+              'status': 403,
+              'message': 'User with specified email address already exists',
+              'data': {}
+            });
+          }
 
-  result.status = 200;
-  result.message = "User successfully updated";
-  result.data = user; 
-  callback(result);
+          return res.status(200).json({
+            'status': 200,
+            'message': 'User successfully updated',
+            'data': {}
+          });
+      });
+    });
+  });
 }
 
 /**
@@ -476,7 +461,5 @@ user.delete = function (req, res) {
     })
   });
 }
-
-
 
 module.exports = user;
