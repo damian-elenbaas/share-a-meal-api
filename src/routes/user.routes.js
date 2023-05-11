@@ -27,7 +27,10 @@ router.get('/profile', (req, res) => {
 });
 
 // GET: Get all users
-router.get('/', user.getAll);
+router.get('/', (req, res) => {
+  console.log(req.query);
+  user.getAll(req, res);
+});
 
 // POST: Create user
 router.post('/', user.create);

@@ -40,7 +40,6 @@ let user = {};
  */
 user.create = function (req, res) {
   logger.info('Creating user');
-  let result = {};
 
   let body = req.body;
 
@@ -110,15 +109,33 @@ user.create = function (req, res) {
  * Function that gets all existing users with setted filter options
  */
 user.getAll = function (req, res) {
-  logger.info('Getting all users')
+  logger.info('Getting all users');
+  logger.info('Params:', req.query);
 
-  if(req.params.length > 2) {
+  const queryFields = Object.entries(req.query);
+
+  if(queryFields.length > 2) {
     res.status(400).json({
       'status': 400,
       'message': 'Bad request. Maximum query count is 2.',
       'data': {}
     });
   }
+
+  if(queryFields.length > 0) {
+    logger.log('Filter fields found');
+    let schema = userSchema.describe().keys;
+    for(const [field, value] of queryFields) {
+      if(!Object.keys(schema).includes(field)) {
+        return res.status(400).json({
+          'status': 400,
+          'message': `Bad request. ${field} field does not exist`,
+          'data': {}
+        })
+      }
+    }
+  }
+
   
   let query = req.query;
 
