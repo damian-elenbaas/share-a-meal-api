@@ -280,6 +280,30 @@ describe('UC-203', function () {
 });
 
 describe('UC-204', function () {
+  it('TC-204-2 - User id does not exist', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .get(`/api/user/0`)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(404);
+            res.body.should.has.property('message').to.be.equal('User niet gevonden');
+            res.body.should.has.property('data');
+            done();
+          })
+      })
+  })
+
   it('TC-204-3 - User id exists', (done) => {
     chai
       .request(server)
@@ -318,7 +342,105 @@ describe('UC-204', function () {
   });
 });
 
+describe('UC-205', function () {
+  it('TC-205-1 - Required field "emailAddress" not given', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .put(`/api/user/1`)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
+          .send({
+            'firstName': 'Damian'
+          })
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(400);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            done();
+          })
+      })
+  });
+
+  it('TC-205-4 - User does not exist', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .put(`/api/user/0`)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
+          .send({
+            'emailAddress': 'm.vandullemen@server.nl',
+            'firstName': 'Damian'
+          })
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(404);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            done();
+          })
+      })
+  });
+
+  it('TC-205-6 - User successfully updated', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
+      })
+      .end((err, res) => {
+        chai
+          .request(server)
+          .put(`/api/user/1`)
+          .set('Authorization', 'Bearer ' + res.body.data.token)
+          .send({
+            'emailAddress': 'm.vandullemen@server.nl',
+            'firstName': 'Damian'
+          })
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(200);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            done();
+          })
+      })
+  });
+});
+
 describe('UC-206', function () {
+  it('TC-206-1 - User does not exist', (done) => {
+    chai.request(server)
+      .delete('/api/user/0')
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        done();
+      })
+  });
+
   it('TC-206-4 - User is successfully deleted', (done) => {
     let emailAddress = 'f.test11231@example.com';
     let password = 'Abcaew123';
