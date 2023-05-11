@@ -40,7 +40,6 @@ chai.use(require('chai-like'));
 chai.use(require('chai-things'));
 
 describe('UC-201', function () {
-
   it('TC-201-1 - Required field is missing', (done) => {
     chai
       .request(server)
