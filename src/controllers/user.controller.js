@@ -72,7 +72,7 @@ user.create = function (req, res) {
                 'data': {}
               })
             } else {
-              return res.status(403).json({
+              return res.status(500).json({
                 'status': 500,
                 'message': 'Internal server error',
                 'data': {}
