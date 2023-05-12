@@ -80,8 +80,8 @@ meal.create = function (req, res) {
 
         let insertedId = sqlResults.insertId;
 
-        res.status(200).json({
-          'status': 200,
+        res.status(201).json({
+          'status': 201,
           'message': 'Meal successfully added',
           'data': { id: insertedId, ...newMeal }
         })
@@ -150,6 +150,14 @@ meal.getById = function (req, res) {
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
+          'data': {}
+        })
+      }
+
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Meal not found',
           'data': {}
         })
       }
