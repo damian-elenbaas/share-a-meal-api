@@ -50,8 +50,8 @@ describe('UC-201', function () {
         // 'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
-        'password': '123',
+        'emailAddress': 'f.test@example.com',
+        'password': 'Abcdefg13',
         'phoneNumber': '06 12345678'
       })
       .end((err, res) => {

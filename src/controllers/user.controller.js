@@ -260,7 +260,7 @@ user.update = function (req, res) {
   logger.info('Updating user');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   const required = joi.object({
     emailAddress: joi.string()
@@ -314,17 +314,6 @@ user.update = function (req, res) {
   let values = Object.values(req.body);
   values.push(userid);
 
-  console.log(sql);
-  console.log(values);
-
-  // if(userid != payloadId) {
-  //   return res.status(403).json({
-  //     'status': 403,
-  //     'message': 'Je bent niet de eigenaar van de user',
-  //     'data': {}
-  //   });
-  // }
-
   pool.getConnection((err, conn) => {
     if(err) {
       return res.status(500).json({
@@ -347,6 +336,14 @@ user.update = function (req, res) {
         return res.status(404).json({
           'status': 404,
           'message': 'User niet gevonden',
+          'data': {}
+        });
+      }
+
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': 'Je bent niet de eigenaar van de user',
           'data': {}
         });
       }
@@ -429,7 +426,7 @@ user.getById = function (req, res) {
   logger.info('Getting user by id');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -459,9 +456,9 @@ user.getById = function (req, res) {
 
       let { password, ...userinfo } = sqlResults[0];
       
-      // if(userid == payloadId) {
-      //   userinfo = { ...userinfo, password };
-      // }
+      if(userid == payloadId) {
+        userinfo = { ...userinfo, password };
+      }
 
       return res.status(200).json({
         'status': 200,
@@ -481,7 +478,7 @@ user.delete = function (req, res) {
   logger.info('Deleting user');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -509,13 +506,13 @@ user.delete = function (req, res) {
         });
       }
 
-      // if(userid != payloadId) {
-      //   return res.status(403).json({
-      //     'status': 403,
-      //     'message': `Je bent niet de eigenaar van de user`,
-      //     'data': {}
-      //   });
-      // }
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': `Je bent niet de eigenaar van de user`,
+          'data': {}
+        });
+      }
       
       conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
         if(sqlError) {
