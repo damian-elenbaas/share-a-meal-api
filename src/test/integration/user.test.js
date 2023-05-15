@@ -50,8 +50,8 @@ describe('UC-201', function () {
         // 'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'test@example.com',
-        'password': '123',
+        'emailAddress': 'f.test@example.com',
+        'password': 'Abcdefg13',
         'phoneNumber': '06 12345678'
       })
       .end((err, res) => {
@@ -429,16 +429,26 @@ describe('UC-205', function () {
 
 describe('UC-206', function () {
   it('TC-206-1 - User does not exist', (done) => {
-    chai.request(server)
-      .delete('/api/user/0')
-      .end((err, res) => {
-        assert(err === null);
-        res.body.should.be.an('object');
-        res.body.should.has.property('status').to.be.equal(404);
-        res.body.should.has.property('message');
-        res.body.should.has.property('data');
-        done();
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
       })
+      .end((err, res) => {
+        chai.request(server)
+          .delete('/api/user/0')
+          .set('Authorization', 'Bearer ' + res.body.data.token)
+          .end((err, res) => {
+            assert(err === null);
+            res.body.should.be.an('object');
+            res.body.should.has.property('status').to.be.equal(404);
+            res.body.should.has.property('message');
+            res.body.should.has.property('data');
+            done();
+      })
+    });
   });
 
   it('TC-206-4 - User is successfully deleted', (done) => {

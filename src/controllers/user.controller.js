@@ -72,7 +72,7 @@ user.create = function (req, res) {
                 'data': {}
               })
             } else {
-              return res.status(403).json({
+              return res.status(500).json({
                 'status': 500,
                 'message': 'Internal server error',
                 'data': {}
@@ -254,7 +254,7 @@ user.update = function (req, res) {
   logger.info('Updating user');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   const required = joi.object({
     emailAddress: joi.string()
@@ -287,14 +287,26 @@ user.update = function (req, res) {
       'data': {}
     });
   }
+  
+  let sql = "UPDATE user SET ";
+  let fieldCount = 0;
+  Object.entries(req.body).forEach(([key, value]) => {
+    const keys = Object.entries(required.describe().keys);
+    keys.forEach(([field, props]) => {
+      if(field == key) {
+        if(fieldCount == 0) {
+          sql = sql + `${field} = ?`;
+        } else {
+          sql = sql + `, ${field} = ?`;
+        }
+        fieldCount = fieldCount + 1;
+      }
+    })
+  })
+  sql = sql + " WHERE id = ?";
 
-  // if(userid != payloadId) {
-  //   return res.status(403).json({
-  //     'status': 403,
-  //     'message': 'Je bent niet de eigenaar van de user',
-  //     'data': {}
-  //   });
-  // }
+  let values = Object.values(req.body);
+  values.push(userid);
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -322,8 +334,17 @@ user.update = function (req, res) {
         });
       }
 
-      conn.query('UPDATE user SET firstName = ?, lastName = ?, isActive = ?, emailAddress = ?, password = ?, phoneNumber = ?, street = ?, city = ? WHERE id = ?',
-        [req.body.firstName, req.body.lastName, req.body.isActive, req.body.emailAddress, req.body.password, req.body.phoneNumber, req.body.street, req.body.city, userid],
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': 'Je bent niet de eigenaar van de user',
+          'data': {}
+        });
+      }
+
+      conn.query(
+        sql,
+        values,
         (sqlError, sqlResults) => {
           if(sqlError) {
             return res.status(403).json({
@@ -397,7 +418,7 @@ user.getById = function (req, res) {
   logger.info('Getting user by id');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -427,9 +448,9 @@ user.getById = function (req, res) {
 
       let { password, ...userinfo } = sqlResults[0];
       
-      // if(userid == payloadId) {
-      //   userinfo = { ...userinfo, password };
-      // }
+      if(userid == payloadId) {
+        userinfo = { ...userinfo, password };
+      }
 
       return res.status(200).json({
         'status': 200,
@@ -448,7 +469,7 @@ user.delete = function (req, res) {
   logger.info('Deleting user');
 
   let userid = req.params.userid;
-  // let payloadId = res.locals.decoded.id;
+  let payloadId = res.locals.decoded.id;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -476,13 +497,13 @@ user.delete = function (req, res) {
         });
       }
 
-      // if(userid != payloadId) {
-      //   return res.status(403).json({
-      //     'status': 403,
-      //     'message': `Je bent niet de eigenaar van de user`,
-      //     'data': {}
-      //   });
-      // }
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': `Je bent niet de eigenaar van de user`,
+          'data': {}
+        });
+      }
       
       conn.query('DELETE FROM user WHERE id = ?', [userid], (sqlError, sqlResults) => {
         if(sqlError) {
