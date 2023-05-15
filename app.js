@@ -5,6 +5,10 @@ const port = process.env.PORT || 3000;
 const api = require('./src/routes/api.routes');
 const user = require('./src/routes/user.routes');
 
+app.use('*', (req, res, next) => {
+  logger.info(`[${req.method}] ${req.originalUrl}`);
+  next();
+});
 app.use('/api', api);
 app.use('/api/user', user);
 app.use('*', (req, res) => {

@@ -106,9 +106,6 @@ user.create = function (req, res) {
  * Function that gets all existing users with setted filter options
  */
 user.getAll = function (req, res) {
-  logger.info('Getting all users');
-  logger.info('Params:', req.query);
-
   const queryFields = Object.entries(req.query);
 
   if(queryFields.length > 2) {
@@ -120,7 +117,6 @@ user.getAll = function (req, res) {
   }
 
   if(queryFields.length > 0) {
-    logger.log('Filter fields found');
     let schema = userSchema.describe().keys;
     for(const [field, value] of queryFields) {
       if(!Object.keys(schema).includes(field)) {
@@ -179,7 +175,6 @@ user.getAll = function (req, res) {
  * Function that logs in user
  */
 user.login = function (req, res) {
-  logger.log(`[POST] /api/login`);
   logger.info('Logging into user')
 
   let credentials = req.body;
@@ -256,7 +251,6 @@ user.login = function (req, res) {
  * Function that updates user information
  */
 user.update = function (req, res) {
-  logger.log(`[PUT] /api/user/${req.params.userid}`);
   logger.info('Updating user');
 
   let userid = req.params.userid;
@@ -400,8 +394,6 @@ user.getByToken = function (req, res) {
  * Function that gets user by given id
  */
 user.getById = function (req, res) {
-  logger.log(`[GET] /api/user/${req.params.userid}`);
-
   logger.info('Getting user by id');
 
   let userid = req.params.userid;
@@ -453,7 +445,6 @@ user.getById = function (req, res) {
  * Deletes user with given id
   */
 user.delete = function (req, res) {
-  logger.log(`[DELETE] /api/user/${req.params.userid}`);
   logger.info('Deleting user');
 
   let userid = req.params.userid;

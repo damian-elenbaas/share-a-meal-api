@@ -1,5 +1,4 @@
 const express = require('express');
-const logger = require('../utils/logger').logger;
 const router = express.Router();
 const auth = require('../controllers/auth.controller');
 const user = require('../controllers/user.controller');
