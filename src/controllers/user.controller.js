@@ -224,7 +224,8 @@ user.login = function (req, res) {
         });
       }
 
-      const { password, ...user } = sqlResults[0];
+      const { password, isActive, ...user } = sqlResults[0];
+      isActive = (isActive === 1);
 
       if(credentials.password == password) {
         logger.log('Signing token');
@@ -239,7 +240,7 @@ user.login = function (req, res) {
           return res.status(200).json({
             'status': 200,
             'message': 'Succesvol ingelogd',
-            'data': { ...user, token }
+            'data': { ...user, isActive, token }
           })
         });
       } else {
