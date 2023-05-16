@@ -217,9 +217,9 @@ user.login = function (req, res) {
       }
 
       if(sqlResults.length == 0) {
-        return res.status(404).json({
-          'status': 404,
-          'message': 'Er bestaat geen account met opgegeven email adres',
+        return res.status(400).json({
+          'status': 400,
+          'message': 'Niet valide wachtwoord',
           'data': {}
         });
       }
@@ -246,7 +246,7 @@ user.login = function (req, res) {
       } else {
         return res.status(404).json({
           'status': 400,
-          'message': 'Invalide gegevens',
+          'message': 'Niet valide wachtwoord',
           'data': {}
         });
       }
@@ -286,6 +286,13 @@ user.update = function (req, res) {
     .message('Invalid phone number')
   })
 
+  if(userid !== payloadId) {
+    return res.status(403).json({
+      'status': 403,
+      'message': 'Je bent niet de eigenaar van de gebruiker',
+      'data': {}
+    });
+  }
 
   const validation = required.validate(req.body);
   if(validation.error) {
@@ -496,6 +503,14 @@ user.delete = function (req, res) {
 
   let userid = req.params.userid;
   let payloadId = res.locals.decoded.id;
+
+  if(userid !== payloadId) {
+    return res.status(403).json({
+      'status': 403,
+      'message': 'Je bent niet de eigenaar van de gebruiker',
+      'data': {}
+    });
+  }
 
   pool.getConnection((err, conn) => {
     if(err) {
