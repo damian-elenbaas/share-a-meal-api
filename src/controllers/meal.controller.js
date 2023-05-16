@@ -21,7 +21,7 @@ const mealSchema = joi.object({
     .required(),
   description: joi.string()
     .required(),
-  allergenes: joi.array().items(joi.string.valid('gluten', 'lactose', 'noten'))
+  allergenes: joi.array().items(joi.string().valid('gluten', 'lactose', 'noten'))
 });
 
 let meal = {};
