@@ -362,11 +362,27 @@ user.update = function (req, res) {
             });
           }
 
-          return res.status(200).json({
-            'status': 200,
-            'message': 'User succesvol geüpdatet',
-            'data': {}
-          });
+          conn.query(
+            'SELECT * FROM user WHERE id = ?',
+            [userid],
+            (sqlError, sqlResults) => {
+              if(sqlError) { 
+                return res.status(500).json({
+                  'status': 500,
+                  'message': 'Internal server error',
+                  'data': {}
+                });
+              }
+
+              let { password, ...updatedUser } = sqlResults[0];
+
+              return res.status(200).json({
+                'status': 200,
+                'message': 'User succesvol geüpdatet',
+                'data': updatedUser
+              });
+            }
+          );
       });
     });
     pool.releaseConnection(conn);
