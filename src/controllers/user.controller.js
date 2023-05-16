@@ -286,14 +286,6 @@ user.update = function (req, res) {
     .message('Invalid phone number')
   })
 
-  if(userid !== payloadId) {
-    return res.status(403).json({
-      'status': 403,
-      'message': 'Je bent niet de eigenaar van de gebruiker',
-      'data': {}
-    });
-  }
-
   const validation = required.validate(req.body);
   if(validation.error) {
     return res.status(400).json({
@@ -302,7 +294,7 @@ user.update = function (req, res) {
       'data': {}
     });
   }
-  
+
   let sql = "UPDATE user SET ";
   let fieldCount = 0;
   Object.entries(req.body).forEach(([key, value]) => {
@@ -352,7 +344,7 @@ user.update = function (req, res) {
       if(userid != payloadId) {
         return res.status(403).json({
           'status': 403,
-          'message': 'Je bent niet de eigenaar van de user',
+          'message': 'Je bent niet de eigenaar van de gebruiker',
           'data': {}
         });
       }
@@ -504,14 +496,6 @@ user.delete = function (req, res) {
   let userid = req.params.userid;
   let payloadId = res.locals.decoded.id;
 
-  if(userid !== payloadId) {
-    return res.status(403).json({
-      'status': 403,
-      'message': 'Je bent niet de eigenaar van de gebruiker',
-      'data': {}
-    });
-  }
-
   pool.getConnection((err, conn) => {
     if(err) {
       return res.status(500).json({
@@ -541,7 +525,7 @@ user.delete = function (req, res) {
       if(userid != payloadId) {
         return res.status(403).json({
           'status': 403,
-          'message': `Je bent niet de eigenaar van de user`,
+          'message': 'Je bent niet de eigenaar van de gebruiker',
           'data': {}
         });
       }

@@ -469,7 +469,7 @@ describe('UC-206', function () {
         'phoneNumber': '0612345678'
       })
       .then(res => {
-        assert(res.body.status === 201);
+        res.body.should.has.property('status').to.be.equal(201);
         assert(res.body.data.id);
         id = res.body.data.id;
         return chai.request(server)
@@ -480,20 +480,22 @@ describe('UC-206', function () {
           });
       })
       .then(res => {
+        assert(res.body.data.token);
         token = 'Bearer ' + res.body.data.token;
         return chai.request(server)
           .get('/api/user')
           .set('Authorization', token);
       })
       .then(res => {
-        assert(res.body.status === 200);
+        console.log(res.body.status);
+        res.body.should.has.property('status').to.be.equal(200);
         expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
         return chai.request(server)
           .delete(`/api/user/${id}`)
           .set('Authorization', token);
       })
       .then(res => {
-        assert(res.body.status === 200);
+        res.body.should.has.property('status').to.be.equal(200);
         assert(res.body.message === `Gebruiker met ID ${id} is verwijderd`);
         return chai.request(server)
           .post('/api/auth/login')
@@ -508,7 +510,7 @@ describe('UC-206', function () {
           .set('Authorization', 'Bearer ' + res.body.data.token);
       })
       .then(res => {
-        assert(res.body.status === 200);
+        res.body.should.has.property('status').to.be.equal(200);
         expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
         done();
       })
