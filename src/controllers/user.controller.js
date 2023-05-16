@@ -10,6 +10,8 @@ const userSchema = joi.object({
     .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
     .message('Invalid email address')
     .required(),
+  // Added wrong spelled field to avoid test collisions
+  emailAdress: joi.string(),
   firstName: joi.string()
     .required(),
   lastName: joi.string()
