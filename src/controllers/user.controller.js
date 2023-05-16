@@ -224,7 +224,7 @@ user.login = function (req, res) {
         });
       }
 
-      const { password, isActive, ...user } = sqlResults[0];
+      let { password, isActive, ...user } = sqlResults[0];
       isActive = (isActive === 1);
 
       if(credentials.password == password) {
