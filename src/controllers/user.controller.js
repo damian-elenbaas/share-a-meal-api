@@ -295,6 +295,14 @@ user.update = function (req, res) {
     });
   }
 
+  if(userid != payloadId) {
+    return res.status(403).json({
+      'status': 403,
+      'message': 'Je bent niet de eigenaar van de gebruiker',
+      'data': {}
+    });
+  }
+
   let sql = "UPDATE user SET ";
   let fieldCount = 0;
   Object.entries(req.body).forEach(([key, value]) => {
@@ -337,14 +345,6 @@ user.update = function (req, res) {
         return res.status(404).json({
           'status': 404,
           'message': 'User niet gevonden',
-          'data': {}
-        });
-      }
-
-      if(userid != payloadId) {
-        return res.status(403).json({
-          'status': 403,
-          'message': 'Je bent niet de eigenaar van de gebruiker',
           'data': {}
         });
       }
