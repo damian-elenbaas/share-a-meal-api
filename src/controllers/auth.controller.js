@@ -21,9 +21,9 @@ auth.validateToken = (req, res, next) => {
 
   jwt.verify(token, privateKey, (err, decoded) => {
     if(err) {
-      return res.status(500).json({
-        'status': 500,
-        'message': 'Internal server error',
+      return res.status(401).json({
+        'status': 401,
+        'message': 'Internal token',
         'data': {}
       });
     }

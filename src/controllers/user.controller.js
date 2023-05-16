@@ -380,13 +380,6 @@ user.getByToken = function (req, res) {
   logger.info('Getting user profile by token');
 
   let id = res.locals.decoded.id;
-  if(!id) {
-    return res.status(401).json({
-      'status': 401,
-      'message': 'Invalid token',
-      'data': {}
-    });
-  }
 
   pool.getConnection((err, conn) => {
     if(err) {
