@@ -518,7 +518,7 @@ user.delete = function (req, res) {
       if(sqlResults.length == 0) {
         return res.status(404).json({
           'status': 404,
-          'message': `User met ID ${userid} is niet gevonden`,
+          'message': `Gebruiker met ID ${userid} is niet gevonden`,
           'data': {}
         });
       }
@@ -542,7 +542,7 @@ user.delete = function (req, res) {
 
         return res.status(200).json({
           'status': 200,
-          'message': `User met ID ${userid} is verwijderd`,
+          'message': `Gebruiker met ID ${userid} is verwijderd`,
           'data': {}
         });
       });
