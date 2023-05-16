@@ -108,7 +108,7 @@ meal.update = function (req, res) {
     name: joi.string()
     .required(),
     description: joi.string(),
-    allergenes: joi.array().items(joi.string.valid('gluten', 'lactose', 'noten'))
+    allergenes: joi.array().items(joi.string().valid('gluten', 'lactose', 'noten'))
   });
 
   let mealid = req.params.mealid;
