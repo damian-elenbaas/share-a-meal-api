@@ -494,7 +494,7 @@ describe('UC-206', function () {
       })
       .then(res => {
         assert(res.body.status === 200);
-        assert(res.body.message === `User met ID ${id} is verwijderd`);
+        assert(res.body.message === `Gebruiker met ID ${id} is verwijderd`);
         return chai.request(server)
           .post('/api/auth/login')
           .send({
