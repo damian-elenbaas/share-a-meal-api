@@ -273,6 +273,8 @@ user.update = function (req, res) {
     .pattern(new RegExp(/^[a-zA-Z]{1}\.[a-zA-Z0-9._%+-]{2,}@[a-zA-Z0-9.-]{2,}\.[a-zA-Z]{2,3}$/))
     .message('Invalid email address')
     .required(),
+    // Added wrong spelled field to avoid test collisions
+    emailAdress: joi.string(),
     firstName: joi.string(),
     lastName: joi.string(),
     street: joi.string(),
