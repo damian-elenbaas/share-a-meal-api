@@ -52,6 +52,7 @@ user.create = function (req, res) {
 
   pool.getConnection((err, conn) => {
     if(err) {
+      logger.error(err);
       return res.status(500).json({
         'status': 500,
         'message': err.message,
@@ -61,7 +62,7 @@ user.create = function (req, res) {
 
       conn.query(
         'INSERT INTO user (firstName, lastName, isActive, emailAddress, password, phoneNumber, street, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
-        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phone, body.street, body.city], 
+        [body.firstName, body.lastName, body.isActive, body.emailAddress, body.password, body.phoneNumber, body.street, body.city], 
         (sqlError, sqlResults) => {
           if(sqlError) {
             if(sqlError.code == 'ER_DUP_ENTRY') {
@@ -72,6 +73,7 @@ user.create = function (req, res) {
                 'data': {}
               })
             } else {
+              logger.error(sqlError);
               return res.status(500).json({
                 'status': 500,
                 'message': 'Internal server error',
@@ -81,16 +83,21 @@ user.create = function (req, res) {
           } else {
             conn.query(`SELECT * FROM user WHERE id = ${sqlResults.insertId}`, (sqlError, sqlResults) => {
               if(sqlError) {
+                logger.error(sqlError);
                 return res.status(500).json({
                   'status': 500,
                   'message': 'Internal server error',
                   'data': {}
                 })
               } else {
+                let newUser = sqlResults[0];
+                let { isActive } = newUser;
+                isActive = (isActive === 1);
+                newUser.isActive = isActive;
                 return res.status(201).json({
                   'status': 201,
                   'message': 'User succesvol geregistreerd',
-                  'data': sqlResults[0]
+                  'data': newUser 
                 });
               }
             });
