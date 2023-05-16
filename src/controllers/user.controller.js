@@ -380,9 +380,17 @@ user.getByToken = function (req, res) {
   logger.info('Getting user profile by token');
 
   let id = res.locals.decoded.id;
+  if(!id) {
+    return res.status(401).json({
+      'status': 401,
+      'message': 'Invalid token',
+      'data': {}
+    });
+  }
 
   pool.getConnection((err, conn) => {
     if(err) {
+      logger.error(err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -392,6 +400,7 @@ user.getByToken = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE id = ?', [id], (sqlError, sqlResults) => {
       if(sqlError) {
+        logger.error(sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
