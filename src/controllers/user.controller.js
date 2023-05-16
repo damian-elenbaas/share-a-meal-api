@@ -300,13 +300,6 @@ user.update = function (req, res) {
     });
   }
 
-  if(userid != payloadId) {
-    return res.status(403).json({
-      'status': 403,
-      'message': 'Je bent niet de eigenaar van de gebruiker',
-      'data': {}
-    });
-  }
 
   let sql = "UPDATE user SET ";
   let fieldCount = 0;
@@ -354,11 +347,20 @@ user.update = function (req, res) {
         });
       }
 
+      if(userid != payloadId) {
+        return res.status(403).json({
+          'status': 403,
+          'message': 'Je bent niet de eigenaar van de gebruiker',
+          'data': {}
+        });
+      }
+
       conn.query(
         sql,
         values,
         (sqlError, sqlResults) => {
           if(sqlError) {
+            logger.error(sqlError);
             return res.status(403).json({
               'status': 403,
               'message': 'User met gegeven email adres bestaat al',
