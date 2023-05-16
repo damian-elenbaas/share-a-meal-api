@@ -202,6 +202,7 @@ user.login = function (req, res) {
 
   pool.getConnection((err, conn) => {
     if(err) {
+      logger.error(err);
       return res.status(500).json({
         'status': 500,
         'message': 'Internal server error',
@@ -211,6 +212,7 @@ user.login = function (req, res) {
 
     conn.query('SELECT * FROM user WHERE emailAddress = ?', [credentials.emailAddress], (sqlError, sqlResults) => {
       if(sqlError) {
+        logger.error(sqlError);
         return res.status(500).json({
           'status': 500,
           'message': 'Internal server error',
@@ -233,6 +235,7 @@ user.login = function (req, res) {
         logger.log('Signing token');
         jwt.sign({ 'id': user.id }, privateKey, (err, token) => {
           if(err) {
+            logger.error(err);
             return res.status(500).json({
               'status': 500,
               'message': 'Internal server error',
