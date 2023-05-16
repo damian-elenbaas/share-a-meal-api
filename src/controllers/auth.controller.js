@@ -9,8 +9,8 @@ auth.validateToken = (req, res, next) => {
   let token = req.headers.authorization;
 
   if(!token) {
-    return res.status(400).json({
-      'status': 400,
+    return res.status(401).json({
+      'status': 401,
       'message': 'Authorization header required',
       'data': {}
     });
