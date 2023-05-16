@@ -3,6 +3,7 @@ const app = express();
 const logger = require('./src/utils/logger').logger;
 const port = process.env.PORT || 3000;
 const api = require('./src/routes/api.routes');
+const auth = require('./src/routes/auth.routes');
 const user = require('./src/routes/user.routes');
 const meal = require('./src/routes/meal.routes');
 
@@ -11,6 +12,7 @@ app.use('*', (req, res, next) => {
   next();
 });
 app.use('/api', api);
+app.use('/api/auth', auth);
 app.use('/api/user', user);
 app.use('/api/meal', meal);
 app.use('*', (req, res) => {

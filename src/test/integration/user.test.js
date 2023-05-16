@@ -215,7 +215,7 @@ describe('UC-202', function () {
   it('TC-202-1 - Show all users', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -245,7 +245,7 @@ describe('UC-203', function () {
   it('TC-203-2 - User is logged in with valid token', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -283,7 +283,7 @@ describe('UC-204', function () {
   it('TC-204-2 - User id does not exist', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -307,7 +307,7 @@ describe('UC-204', function () {
   it('TC-204-3 - User id exists', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -346,7 +346,7 @@ describe('UC-205', function () {
   it('TC-205-1 - Required field "emailAddress" not given', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -373,7 +373,7 @@ describe('UC-205', function () {
   it('TC-205-4 - User does not exist', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -401,7 +401,7 @@ describe('UC-205', function () {
   it('TC-205-6 - User successfully updated', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -431,7 +431,7 @@ describe('UC-206', function () {
   it('TC-206-1 - User does not exist', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .post('/api/auth/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
         'password': 'secret'
@@ -473,7 +473,7 @@ describe('UC-206', function () {
         assert(res.body.data.id);
         id = res.body.data.id;
         return chai.request(server)
-          .post('/api/login')
+          .post('/api/auth/login')
           .send({
             'emailAddress': emailAddress,
             'password': password
@@ -496,7 +496,7 @@ describe('UC-206', function () {
         assert(res.body.status === 200);
         assert(res.body.message === `User met ID ${id} is verwijderd`);
         return chai.request(server)
-          .post('/api/login')
+          .post('/api/auth/login')
           .send({
             'emailAddress': 'm.vandullemen@server.nl',
             'password': 'secret'
