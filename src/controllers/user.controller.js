@@ -302,10 +302,11 @@ user.update = function (req, res) {
     });
   }
 
+  let { emailAdress, ...newUserValues } = req.body;
 
   let sql = "UPDATE user SET ";
   let fieldCount = 0;
-  Object.entries(req.body).forEach(([key, value]) => {
+  Object.entries(newUserValues).forEach(([key, value]) => {
     const keys = Object.entries(required.describe().keys);
     keys.forEach(([field, props]) => {
       if(field == key) {
@@ -320,7 +321,7 @@ user.update = function (req, res) {
   })
   sql = sql + " WHERE id = ?";
 
-  let values = Object.values(req.body);
+  let values = Object.values(newUserValues);
   values.push(userid);
 
   pool.getConnection((err, conn) => {
