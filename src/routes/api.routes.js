@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const user = require('./../controllers/user.controller');
 
 router.use(express.json());
 
@@ -14,5 +15,7 @@ router.get('/info', (req, res) => {
     }
   });
 });
+
+router.post('/login', user.login);
 
 module.exports = router;
