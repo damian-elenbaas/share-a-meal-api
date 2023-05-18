@@ -201,12 +201,6 @@ meal.update = function (req, res) {
     });
     pool.releaseConnection(conn);
   });
-
-  res.status(200).json({
-    'status': 200,
-    'message': 'Not implemented yet',
-    'data': {}
-  })
 }
 
 meal.getAll = function (req, res) {
