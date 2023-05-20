@@ -49,7 +49,7 @@ meal.create = function (req, res) {
       });
     } 
 
-    conn.query(`INSERT INTO MEAL 
+    conn.query(`INSERT INTO meal 
         (isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, createDate, updateDate, name, description, allergenes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
