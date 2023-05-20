@@ -184,8 +184,10 @@ user.getAll = function (req, res) {
 
             let users = [];
             results.forEach((u) => {
-              const { password, ...userinfo } = u;
-              users.push(userinfo);
+              let { password, isActive, ...userInfo } = u;
+              isActive = (isActive === 1);
+              userInfo = { userInfo, isActive };
+              users.push(userInfo);
             })
 
             res.status(200).json({
