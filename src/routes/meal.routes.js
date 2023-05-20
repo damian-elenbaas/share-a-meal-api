@@ -10,9 +10,9 @@ router.post('/', auth.validateToken, meal.create);
 
 router.put('/:mealid', auth.validateToken, meal.update);
 
-router.get('/', auth.validateToken, meal.getAll);
+router.get('/', meal.getAll);
 
-router.get('/:mealid', auth.validateToken, meal.getById);
+router.get('/:mealid', meal.getById);
 
 router.delete('/:mealid', auth.validateToken, meal.delete);
 
