@@ -150,7 +150,7 @@ user.getAll = function (req, res) {
       sqlQuery += ' WHERE';
 
     } else {
-      sqlQuery += ',';
+      sqlQuery += ' AND';
     }
 
     if(query[key] == 'true' || query[key] == 'false') {
