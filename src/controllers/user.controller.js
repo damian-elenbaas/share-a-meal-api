@@ -249,9 +249,9 @@ user.login = function (req, res) {
           })
         });
       } else {
-        return res.status(400).json({
-          'status': 400,
-          'message': 'Niet valide wachtwoord',
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Gebruiker bestaat niet',
           'data': {}
         });
       }
