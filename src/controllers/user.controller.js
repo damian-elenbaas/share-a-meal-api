@@ -152,8 +152,15 @@ user.getAll = function (req, res) {
     } else {
       sqlQuery += ',';
     }
-    sqlQuery += ` ${key} = '${query[key]}'`;
+
+    if(query[key] == 'true' || query[key] == 'false') {
+      sqlQuery += ` ${key} = ${query[key]}`;
+    } else {
+      sqlQuery += ` ${key} = '${query[key]}'`;
+    }
   })
+
+  logger.debug('Final query: ', sqlQuery);
 
   pool.getConnection((err, conn) => {
     if(err) {
