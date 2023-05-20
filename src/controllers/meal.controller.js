@@ -57,13 +57,16 @@ meal.create = function (req, res) {
         newMeal.isVega || false,
         newMeal.isVegan || false,
         newMeal.isToTakeHome || true,
-        new Date(newMeal.dateTime).toString() || new Date().toString(),
+        new Date(newMeal.dateTime).toISOString().slice(0, 19).replace('T', ' ')
+          || new Date().toISOString().slice(0, 19).replace('T', ' '),
         newMeal.maxAmountOfParticipants || 6,
         newMeal.price || 0.00,
         newMeal.imageUrl || '',
         userid,
-        new Date(newMeal.createDate).toString() || new Date().toString(),
-        new Date(newMeal.updateDate).toString() || new Date().toString(),
+        new Date(newMeal.createDate).toISOString().slice(0, 19).replace('T', ' ') 
+          || new Date().toISOString().slice(0, 19).replace('T', ' '),
+        new Date(newMeal.updateDate).toISOString().slice(0, 19).replace('T', ' ') 
+          || new Date().toISOString().slice(0, 19).replace('T', ' '),
         newMeal.name || '',
         newMeal.description || '',
         `'${newMeal.allergenes}'` || '' 
