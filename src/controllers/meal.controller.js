@@ -69,6 +69,18 @@ meal.create = function (req, res) {
       updateDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
     }
 
+    let allergenes = '';
+    let firstAllergene = true;
+    newMeal.allergenes.forEach((allergene) => {
+      if(!firstAllergene) {
+        allergenes += ', ';
+      }
+
+      allergenes += allergene;
+
+      firstAllergene = false;
+    })
+
     conn.query(`INSERT INTO meal 
         (isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, createDate, updateDate, name, description, allergenes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
