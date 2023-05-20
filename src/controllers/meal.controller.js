@@ -66,7 +66,8 @@ meal.create = function (req, res) {
         newMeal.updateDate || new Date().toISOString(),
         newMeal.name || '',
         newMeal.description || '',
-        newMeal.allergenes || '' 
+        //newMeal.allergenes || '' 
+        ''
       ],
       (sqlError, sqlResults) => {
         if(sqlError) {
