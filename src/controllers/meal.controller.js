@@ -49,6 +49,26 @@ meal.create = function (req, res) {
       });
     } 
 
+    let dateTime, createDate, updateDate;
+
+    if(newMeal.dateTime) {
+      dateTime = new Date(newMeal.dateTime).toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      dateTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    if(newMeal.createDate) {
+      createDate = new Date(newMeal.createDate).toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      createDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
+
+    if(newMeal.updateDate) {
+      updateDate = new Date(newMeal.updateDate).toISOString().slice(0, 19).replace('T', ' ');
+    } else {
+      updateDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
+
     conn.query(`INSERT INTO meal 
         (isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, createDate, updateDate, name, description, allergenes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -57,16 +77,13 @@ meal.create = function (req, res) {
         newMeal.isVega || false,
         newMeal.isVegan || false,
         newMeal.isToTakeHome || true,
-        new Date(newMeal.dateTime).toISOString().slice(0, 19).replace('T', ' ')
-          || new Date().toISOString().slice(0, 19).replace('T', ' '),
+        dateTime,
         newMeal.maxAmountOfParticipants || 6,
         newMeal.price || 0.00,
         newMeal.imageUrl || '',
         userid,
-        new Date(newMeal.createDate).toISOString().slice(0, 19).replace('T', ' ') 
-          || new Date().toISOString().slice(0, 19).replace('T', ' '),
-        new Date(newMeal.updateDate).toISOString().slice(0, 19).replace('T', ' ') 
-          || new Date().toISOString().slice(0, 19).replace('T', ' '),
+        createDate,
+        updateDate,
         newMeal.name || '',
         newMeal.description || '',
         `'${newMeal.allergenes}'` || '' 
