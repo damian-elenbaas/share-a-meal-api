@@ -73,7 +73,7 @@ meal.create = function (req, res) {
     let firstAllergene = true;
     newMeal.allergenes.forEach((allergene) => {
       if(!firstAllergene) {
-        allergenes += ', ';
+        allergenes += ',';
       }
 
       allergenes += allergene;
