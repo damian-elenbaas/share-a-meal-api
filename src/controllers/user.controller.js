@@ -158,6 +158,7 @@ user.getAll = function (req, res) {
     } else {
       sqlQuery += ` ${key} = '${query[key]}'`;
     }
+    firstField = false;
   })
 
   logger.debug('Final query: ', sqlQuery);
