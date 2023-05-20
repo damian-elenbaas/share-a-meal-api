@@ -186,7 +186,7 @@ user.getAll = function (req, res) {
             results.forEach((u) => {
               let { password, isActive, ...userInfo } = u;
               isActive = (isActive === 1);
-              userInfo = { userInfo, isActive };
+              userInfo = { ...userInfo, isActive };
               users.push(userInfo);
             })
 
