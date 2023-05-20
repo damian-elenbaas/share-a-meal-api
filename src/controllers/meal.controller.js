@@ -98,7 +98,7 @@ meal.create = function (req, res) {
         updateDate,
         newMeal.name || '',
         newMeal.description || '',
-        `'${newMeal.allergenes}'` || '' 
+        allergenes 
       ],
       (sqlError, sqlResults) => {
         if(sqlError) {
