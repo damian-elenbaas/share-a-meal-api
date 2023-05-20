@@ -115,7 +115,9 @@ user.create = function (req, res) {
  * Function that gets all existing users with setted filter options
  */
 user.getAll = function (req, res) {
+  logger.debug('Query: ', req.query);
   const queryFields = Object.entries(req.query);
+  logger.debug('Queryfields: ', queryFields);
 
   if(queryFields.length > 2) {
     res.status(400).json({
@@ -138,9 +140,20 @@ user.getAll = function (req, res) {
     }
   }
 
+  let sqlQuery = 'SELECT * FROM user';
   let query = req.query;
 
-  // TODO: Add filtering feature to DB
+  let firstField = true;
+  Object.keys(query).forEach(key => {
+    logger.debug(`Adding ${key}=${query[key]}`)
+    if(firstField) {
+      sqlQuery += ' WHERE';
+
+    } else {
+      sqlQuery += ',';
+    }
+    sqlQuery += ` ${key} = '${query[key]}'`;
+  })
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -151,7 +164,7 @@ user.getAll = function (req, res) {
       })
     } else {
       conn.query(
-        'SELECT * FROM `user`',
+        sqlQuery,
         (err, results, fields) => {
           if(err) {
             res.status(500).json({
