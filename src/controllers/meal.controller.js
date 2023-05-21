@@ -247,7 +247,7 @@ meal.update = function (req, res) {
             });
           }
           conn.query(
-            'SELECT * FROM meal WHERE id = ?', [mealId], (sqlError, sqlResults) => {
+            'SELECT * FROM meal WHERE id = ?', [mealid], (sqlError, sqlResults) => {
               if(sqlError) {
                 return res.status(500).json({
                   'status': 500,
