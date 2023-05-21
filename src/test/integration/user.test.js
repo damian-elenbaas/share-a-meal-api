@@ -39,6 +39,11 @@ chai.use(chaiHttp);
 chai.use(require('chai-like'));
 chai.use(require('chai-things'));
 
+let emailAddress = 'd.elenbaas@test.nl';
+let password = 'Abcd1234E';
+let createdUserId;
+let token;
+
 describe('UC-201', function () {
   it('TC-201-1 - Required field is missing', (done) => {
     chai
@@ -180,8 +185,8 @@ describe('UC-201', function () {
         'street': 'Lovensdijkstraat 61',
         'city': 'Breda',
         'isActive': true,
-        'emailAddress': 'd.elenbaas@test.nl',
-        'password': 'Abcd1234E',
+        'emailAddress': emailAddress,
+        'password': password,
         'phoneNumber': '0612345678'
       })
       .end((err, res) => {
@@ -205,40 +210,126 @@ describe('UC-201', function () {
         data.should.has.property('password');
         data.should.has.property('phoneNumber');
 
+        createdUserId = data.id;
         done();
       })
   });
 });
 
+describe('UC-101', function() {
+  it('TC-101-1 - Required field is missing', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        // 'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'Secret123'
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status')
+          .to.be.equal(400);
+        res.body.should.has.property('message')
+        res.body.should.has.property('data').to.be.empty;
 
-describe('UC-202', function () {
-  it('TC-202-1 - Show all users', (done) => {
+        done();
+      });
+  });
+
+  it('TC-101-2 - Not valid password', (done) => {
     chai
       .request(server)
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
+        'password': 'secret'
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status')
+          .to.be.equal(400);
+        res.body.should.has.property('message')
+        res.body.should.has.property('data').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-101-3 - User does not exist', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': 'doesNotExist@server.nl',
         'password': 'Secret123'
       })
       .end((err, res) => {
-        assert(res.body.data.token);
-        chai
-          .request(server)
-          .get('/api/user')
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(200);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            let { data } = res.body;
-            data.should.be.an('array');
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status')
+          .to.be.equal(404);
+        res.body.should.has.property('message')
+        res.body.should.has.property('data').to.be.empty;
 
-            done();
-          })
+        done();
+      });
+  });
+
+  it('TC-101-4 - Successfully logged in', (done) => {
+    chai
+      .request(server)
+      .post('/api/login')
+      .send({
+        'emailAddress': emailAddress,
+        'password': password 
       })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status')
+          .to.be.equal(200);
+        res.body.should.has.property('message')
+        res.body.should.has.property('data');
 
+        let { data } = res.body;
+        data.should.be.an('object');
+        data.should.has.property('id');
+        data.should.has.property('firstName');
+        data.should.has.property('lastName');
+        data.should.has.property('street');
+        data.should.has.property('city');
+        data.should.has.property('isActive');
+        data.should.has.property('emailAddress');
+        data.should.not.has.property('password');
+        data.should.has.property('phoneNumber');
+        data.should.has.property('token');
+
+        token = data.token;
+
+        done();
+      });
+  });
+});
+
+describe('UC-202', function () {
+  it('TC-202-1 - Show all users', (done) => {
+    chai
+      .request(server)
+      .get('/api/user')
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        let { data } = res.body;
+        data.should.be.an('array');
+
+        done();
+      });
   });
 });
 
@@ -246,37 +337,27 @@ describe('UC-203', function () {
   it('TC-203-2 - User is logged in with valid token', (done) => {
     chai
       .request(server)
-      .post('/api/login')
-      .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
-      })
+      .get('/api/user/profile')
+      .set('Authorization', 'Bearer ' + token)
       .end((err, res) => {
-        chai
-          .request(server)
-          .get('/api/user/profile')
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(200);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            let { data } = res.body;
-            data.should.be.an('object');
-            data.should.has.property('id');
-            data.should.has.property('firstName');
-            data.should.has.property('lastName');
-            data.should.has.property('street');
-            data.should.has.property('city');
-            data.should.has.property('isActive');
-            data.should.has.property('emailAddress');
-            data.should.has.property('phoneNumber');
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        let { data } = res.body;
+        data.should.be.an('object');
+        data.should.has.property('id');
+        data.should.has.property('firstName');
+        data.should.has.property('lastName');
+        data.should.has.property('street');
+        data.should.has.property('city');
+        data.should.has.property('isActive');
+        data.should.has.property('emailAddress');
+        data.should.has.property('phoneNumber');
 
-            done();
-          });
+        done();
       });
-
   });
 });
 
@@ -284,62 +365,44 @@ describe('UC-204', function () {
   it('TC-204-2 - User id does not exist', (done) => {
     chai
       .request(server)
-      .post('/api/login')
-      .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
-      })
+      .get(`/api/user/0`)
+      .set('Authorization', 'Bearer ' + token)
       .end((err, res) => {
-        chai
-          .request(server)
-          .get(`/api/user/0`)
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(404);
-            res.body.should.has.property('message').to.be.equal('User niet gevonden');
-            res.body.should.has.property('data');
-            done();
-          })
-      })
-  })
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message').to.be.equal('User niet gevonden');
+        res.body.should.has.property('data');
+        done();
+      });
+  });
 
   it('TC-204-3 - User id exists', (done) => {
     chai
       .request(server)
-      .post('/api/login')
-      .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
-      })
+      .get(`/api/user/2`)
+      .set('Authorization', 'Bearer ' + token)
       .end((err, res) => {
-        chai
-          .request(server)
-          .get(`/api/user/2`)
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(200);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            let { data } = res.body;
-            data.should.be.an('object');
-            data.should.has.property('id');
-            data.should.has.property('firstName');
-            data.should.has.property('lastName');
-            data.should.has.property('street');
-            data.should.has.property('city');
-            data.should.has.property('isActive');
-            data.should.has.property('emailAddress');
-            // data.should.has.property('password');
-            data.should.has.property('phoneNumber');
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        let { data } = res.body;
+        data.should.be.an('object');
+        data.should.has.property('id');
+        data.should.has.property('firstName');
+        data.should.has.property('lastName');
+        data.should.has.property('street');
+        data.should.has.property('city');
+        data.should.has.property('isActive');
+        data.should.has.property('emailAddress');
+        data.should.has.property('phoneNumber');
+        data.should.not.has.property('password');
+        data.should.not.has.property('token');
 
-            done();
-          })
+        done();
       })
-
   });
 });
 
@@ -347,176 +410,119 @@ describe('UC-205', function () {
   it('TC-205-1 - Required field "emailAddress" not given', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .put(`/api/user/${createdUserId}`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
+        'firstName': 'Damian'
       })
       .end((err, res) => {
-        chai
-          .request(server)
-          .put(`/api/user/1`)
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .send({
-            'firstName': 'Damian'
-          })
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(400);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            done();
-          })
-      })
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(400);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        done();
+      });
   });
 
   it('TC-205-4 - User does not exist', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .put(`/api/user/42069`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
+        'firstName': 'Damian'
       })
       .end((err, res) => {
-        chai
-          .request(server)
-          .put(`/api/user/42069`)
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .send({
-            'emailAddress': 'm.vandullemen@server.nl',
-            'firstName': 'Damian'
-          })
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(404);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            done();
-          })
-      })
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        done();
+      });
   });
 
   it('TC-205-6 - User successfully updated', (done) => {
     chai
       .request(server)
-      .post('/api/login')
+      .put(`/api/user/${createdUserId}`)
+      .set('Authorization', 'Bearer ' + token)
       .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
+        'emailAddress': emailAddress,
+        'firstName': 'Test'
       })
       .end((err, res) => {
-        chai
-          .request(server)
-          .put(`/api/user/1`)
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .send({
-            'emailAddress': 'm.vandullemen@server.nl',
-            'firstName': 'Damian'
-          })
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(200);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            done();
-          })
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        done();
       })
   });
 });
 
 describe('UC-206', function () {
   it('TC-206-1 - User does not exist', (done) => {
-    chai
-      .request(server)
-      .post('/api/login')
-      .send({
-        'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'Secret123'
-      })
+    chai.request(server)
+      .delete('/api/user/0')
+      .set('Authorization', 'Bearer ' + token)
       .end((err, res) => {
-        chai.request(server)
-          .delete('/api/user/0')
-          .set('Authorization', 'Bearer ' + res.body.data.token)
-          .end((err, res) => {
-            assert(err === null);
-            res.body.should.be.an('object');
-            res.body.should.has.property('status').to.be.equal(404);
-            res.body.should.has.property('message');
-            res.body.should.has.property('data');
-            done();
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+        done();
       })
-    });
   });
 
   it('TC-206-4 - User is successfully deleted', (done) => {
-    let emailAddress = 'f.test11231@example.com';
-    let password = 'Abcaew123';
-    let id, token;
-
     chai.request(server)
-      .post('/api/user')
+      .post('/api/login')
       .send({
-        'firstName': 'Damian',
-        'lastName': 'Elenbaas',
-        'street': 'Lovensdijkstraat 61',
-        'city': 'Breda',
-        'isActive': true,
         'emailAddress': emailAddress,
-        'password': password,
-        'phoneNumber': '0612345678'
+        'password': password
       })
-      .then(res => {
-        res.body.should.has.property('status').to.be.equal(201);
-        assert(res.body.data.id);
-        id = res.body.data.id;
-        return chai.request(server)
-          .post('/api/login')
-          .send({
-            'emailAddress': emailAddress,
-            'password': password
-          });
-      })
-      .then(res => {
-        assert(res.body.data.token);
-        token = 'Bearer ' + res.body.data.token;
-        return chai.request(server)
-          .get('/api/user')
-          .set('Authorization', token);
-      })
-      .then(res => {
-        res.body.should.has.property('status').to.be.equal(200);
-        expect(res.body.data).to.be.an('array').that.contains.something.like({'id': id});
-        return chai.request(server)
-          .delete(`/api/user/${id}`)
-          .set('Authorization', token);
-      })
-      .then(res => {
-        res.body.should.has.property('status').to.be.equal(200);
-        assert(res.body.message === `Gebruiker met ID ${id} is verwijderd`);
-        return chai.request(server)
-          .post('/api/login')
-          .send({
-            'emailAddress': 'm.vandullemen@server.nl',
-            'password': 'Secret123'
-          });
-      })
-      .then(res => {
-        return chai.request(server)
-          .get('/api/user')
-          .set('Authorization', 'Bearer ' + res.body.data.token);
-      })
-      .then(res => {
-        res.body.should.has.property('status').to.be.equal(200);
-        expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': id});
-        done();
-      })
-      .catch(err => {
-        done(err);
-      });
+    .then(res => {
+      assert(res.body.data.token);
+      token = 'Bearer ' + res.body.data.token;
+      return chai.request(server)
+        .get('/api/user')
+        .set('Authorization', token);
+    })
+    .then(res => {
+      res.body.should.has.property('status').to.be.equal(200);
+      expect(res.body.data).to.be.an('array').that.contains.something.like({'id': createdUserId});
+      return chai.request(server)
+        .delete(`/api/user/${createdUserId}`)
+        .set('Authorization', token);
+    })
+    .then(res => {
+      res.body.should.has.property('status').to.be.equal(200);
+      assert(res.body.message === `Gebruiker met ID ${createdUserId} is verwijderd`);
+      return chai.request(server)
+        .post('/api/login')
+        .send({
+          'emailAddress': 'm.vandullemen@server.nl',
+          'password': 'Secret123'
+        });
+    })
+    .then(res => {
+      return chai.request(server)
+        .get('/api/user')
+        .set('Authorization', 'Bearer ' + res.body.data.token);
+    })
+    .then(res => {
+      res.body.should.has.property('status').to.be.equal(200);
+      expect(res.body.data).to.be.an('array').that.not.contains.something.like({'id': createdUserId});
+      done();
+    })
+    .catch(err => {
+      done(err);
+    });
   });
 });
 
