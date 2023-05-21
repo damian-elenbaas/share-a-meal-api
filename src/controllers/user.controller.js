@@ -131,11 +131,11 @@ user.getAll = function (req, res) {
     let schema = userSchema.describe().keys;
     for(const [field, value] of queryFields) {
       if(!Object.keys(schema).includes(field)) {
-        return res.status(400).json({
-          'status': 400,
-          'message': `Bad request. ${field} field does not exist`,
-          'data': {}
-        })
+        return res.status(200).json({
+          'status': 200,
+          'message': 'Alle users',
+          'data': [] 
+        });
       }
     }
   }
