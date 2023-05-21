@@ -43,6 +43,7 @@ let emailAddress = 'd.elenbaas@test.nl';
 let password = 'Abcd1234E';
 let createdUserId;
 let token;
+let createdMealId;
 
 describe('UC-201', function () {
   it('TC-201-1 - Required field is missing', (done) => {
@@ -713,6 +714,123 @@ describe('UC-205', function () {
       });
   });
 });
+
+describe('UC-301', function() {
+  it('TC-301-1 - Required field is missing', (done) => {
+    chai
+      .request(server)
+      .post('/api/meal')
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'description': 'Een test maaltijd beschrijving',
+        'price': 2.00,
+        'maxAmountOfParticipants': 3
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(400);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-301-2 - Not logged in', (done) => {
+    chai
+      .request(server)
+      .post('/api/meal')
+      // .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'description': 'Een test maaltijd beschrijving',
+        'price': 2.00,
+        'maxAmountOfParticipants': 3,
+        'imageUrl': 'http://test.nl/bestand.jpg'
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(401);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  // it('TC-301-3 - Meal successfully added', (done) => {
+  //   chai
+  //     .request(server)
+  //     .post('/api/meal')
+  //     .set('Authorization', 'Bearer ' + token)
+  //     .send({
+  //       'name': 'Een test maaltijd',
+  //       'description': 'Een test maaltijd beschrijving',
+  //       'price': 2.00,
+  //       'maxAmountOfParticipants': 3,
+  //       'imageUrl': 'http://test.nl/bestand.jpg'
+  //     })
+  //     .end((err, res) => {
+  //       assert(err === null);
+  //       res.body.should.be.an('object');
+  //       res.body.should.has.property('status').to.be.equal(201);
+  //       res.body.should.has.property('message');
+  //       res.body.should.has.property('data');
+  //
+  //       let { data } = res.body;
+  //       data.should.be.an('object').not.to.be.empty;
+  //
+  //       data.should.has.property('id');
+  //       data.should.has.property('name');
+  //       data.should.has.property('description');
+  //       data.should.has.property('isActive');
+  //       data.should.has.property('isVega');
+  //       data.should.has.property('isVegan');
+  //       data.should.has.property('isToTakeHome');
+  //       data.should.has.property('dateTime');
+  //       data.should.has.property('maxAmountOfParticipants');
+  //       data.should.has.property('price');
+  //       data.should.has.property('imageUrl');
+  //       data.should.has.property('allergenes').to.be.an('array');
+  //       data.should.has.property('cook');
+  //
+  //       done();
+  //     });
+  // });
+});
+
+describe('UC-302 - Edit meal data', function() {
+
+});
+
+describe('UC-303 - Get all meals', function() {
+
+});
+
+describe('UC-304 - Get meal by ID', function() {
+
+});
+
+describe('UC-305 - Delete meal', function() {
+
+});
+
+describe('UC-401 - Participate on meal', function() {
+
+})
+
+describe('UC-402 - Remove participation on meal', function() {
+
+})
 
 describe('UC-206', function () {
   it('TC-206-1 - User does not exist', (done) => {

@@ -71,15 +71,17 @@ meal.create = function (req, res) {
 
     let allergenes = '';
     let firstAllergene = true;
-    newMeal.allergenes.forEach((allergene) => {
-      if(!firstAllergene) {
-        allergenes += ',';
-      }
+    if(newMeal.allergenes) {
+      newMeal.allergenes.forEach((allergene) => {
+        if(!firstAllergene) {
+          allergenes += ',';
+        }
 
-      allergenes += allergene;
+        allergenes += allergene;
 
-      firstAllergene = false;
-    })
+        firstAllergene = false;
+      })
+    }
 
     conn.query(`INSERT INTO meal 
         (isActive, isVega, isVegan, isToTakeHome, dateTime, maxAmountOfParticipants, price, imageUrl, cookId, createDate, updateDate, name, description, allergenes)
