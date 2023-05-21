@@ -361,10 +361,70 @@ meal.getById = function (req, res) {
 }
 
 meal.delete = function (req, res) {
-  res.status(404).json({
-    'status': 404,
-    'message': 'Not implemented yet',
-    'data': {}
+  let mealId = req.params.mealId;
+  let payloadId = res.locals.decoded.id;
+
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error(err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
+
+    conn.query(
+      'SELECT * FROM meal WHERE id = ?',
+      [mealId],
+      (sqlError, sqlResults) => {
+        if(sqlError) {
+          logger.error(sqlError);
+          return res.status(500).json({
+            'status': 500,
+            'message': 'Internal server error',
+            'data': {}
+          });
+        }
+
+        if(sqlResults.length == 0) {
+          return res.status(404).json({
+            'status': 404,
+            'message': 'Meal not found',
+            'data': {}
+          });
+        }
+
+        if(sqlResults[0].cookId != payloadId) {
+          return res.status(403).json({
+            'status': 403,
+            'message': 'You are not the owner of the meal',
+            'data': {}
+          });
+        }
+
+        conn.query(
+          'DELETE FROM meal WHERE id = ?',
+          [mealId],
+          (sqlError, sqlResults) => {
+            if(sqlError) {
+              logger.error(sqlError);
+              return res.status(500).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              });
+            }
+
+            return res.status(200).json({
+              'status': 200,
+              'message': 'Meal successfully deleted',
+              'data': {}
+            });
+          }
+        );
+      }
+    );
   });
 }
 
@@ -533,7 +593,7 @@ meal.removeParticipant = function (req, res) {
 
               return res.status(200).json({
                 'status': 200,
-                'message': `User met ID ${payloadId} succesvol afgemeld voor meal met ID ${mealId}`,
+                'message': `User met ID ${payloadId} is afgemeld voor maaltijd met ID ${mealId}`,
                 'data': {}
               })
             }
@@ -580,8 +640,8 @@ meal.getParticipants = function (req, res) {
         }
 
         if(sqlResults[0].cookId !== payloadId) {
-          return res.status(401).json({
-            'status': 401,
+          return res.status(403).json({
+            'status': 403,
             'message': 'You are not the owner of the meal',
             'data': {}
           });
@@ -651,8 +711,8 @@ meal.getParticipantById = function (req, res) {
         }
 
         if(sqlResults[0].cookId !== payloadId) {
-          return res.status(401).json({
-            'status': 401,
+          return res.status(403).json({
+            'status': 403,
             'message': 'You are not the owner of the meal',
             'data': {}
           });
