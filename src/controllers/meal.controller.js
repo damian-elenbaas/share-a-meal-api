@@ -246,12 +246,23 @@ meal.update = function (req, res) {
               'data': {}
             });
           }
+          conn.query(
+            'SELECT * FROM meal WHERE id = ?', [mealId], (sqlError, sqlResults) => {
+              if(sqlError) {
+                return res.status(500).json({
+                  'status': 500,
+                  'message': 'Internal server error',
+                  'data': {}
+                });
+              }
 
-          return res.status(200).json({
-            'status': 200,
-            'message': 'Maaltijd succesvol gewijzigd',
-            'data': {}
-          });
+              return res.status(200).json({
+                'status': 200,
+                'message': 'Maaltijd succesvol gewijzigd',
+                'data': sqlResults[0] 
+              });
+            }
+          )
         }
       );
     });
