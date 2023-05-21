@@ -256,10 +256,19 @@ meal.getAll = function (req, res) {
         })
       }
 
+      let meals = sqlResults.map((m) => {
+        m.isActive = (m.isActive === 1);
+        m.isVega = (m.isVega === 1);
+        m.isVegan = (m.isVegan === 1);
+        m.isToTakeHome = (m.isToTakeHome === 1);
+
+        return m;
+      });
+
       return res.status(200).json({
         'status': 200,
         'message': 'All meals',
-        'data': sqlResults
+        'data': meals 
       })
     })
 
@@ -298,11 +307,17 @@ meal.getById = function (req, res) {
           'data': {}
         })
       }
+      
+      let foundedMeal = sqlResults[0];
+      foundedMeal.isActive = (foundedMeal.isActive === 1);
+      foundedMeal.isVega = (foundedMeal.isVega === 1);
+      foundedMeal.isVegan = (foundedMeal.isVegan === 1);
+      foundedMeal.isToTakeHome = (foundedMeal.isToTakeHome === 1);
 
       return res.status(200).json({
         'status': 200,
         'message': `Meal info with ID ${id}`,
-        'data': sqlResults[0]
+        'data': foundedMeal 
       })
     })
 
