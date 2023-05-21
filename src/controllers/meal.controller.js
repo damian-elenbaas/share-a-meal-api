@@ -114,13 +114,50 @@ meal.create = function (req, res) {
 
         let insertedId = sqlResults.insertId;
 
-        res.status(201).json({
-          'status': 201,
-          'message': 'Meal successfully added',
-          'data': { id: insertedId, ...newMeal }
-        })
+        conn.query(
+          `SELECT * FROM meal WHERE id = ${insertedId}`,
+          (sqlError, sqlResults) => {
+            if(sqlError) {
+              logger.error(sqlError);
+              return res.status(500).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              });
+            }
+
+            let { cookId, ...mealInfo } = sqlResults[0];
+            mealInfo.isActive = (mealInfo.isActive === 1);
+            mealInfo.isVega = (mealInfo.isVega === 1);
+            mealInfo.isVegan = (mealInfo.isVegan === 1);
+            mealInfo.isToTakeHome = (mealInfo.isToTakeHome === 1);
+
+
+            return res.status(201).json({
+              'status': 201,
+              'message': 'Meal successfully added',
+              'data': { ...mealInfo }
+            });
+
+            // conn.query(
+            //   `SELECT * FROM user WHERE id = ${cookId}`,
+            //   (sqlError, sqlResults) => {
+            //     if(sqlError) {
+            //       logger.error(sqlError);
+            //       return res.status(500).json({
+            //         'status': 500,
+            //         'message': 'Internal server error',
+            //         'data': {}
+            //       });
+            //     }
+            //
+            //     let { password, ...user } = sqlResults[0];
+            //   }
+            // );
+          }
+        );
       }
-    )
+    );
     pool.releaseConnection(conn);
   });
 }
@@ -173,15 +210,17 @@ meal.update = function (req, res) {
 
   let allergenes = '';
   let firstAllergene = true;
-  updatedMeal.allergenes.forEach((allergene) => {
-    if(!firstAllergene) {
-      allergenes += ',';
-    }
+  if(updatedMeal.allergenes) {
+    updatedMeal.allergenes.forEach((allergene) => {
+      if(!firstAllergene) {
+        allergenes += ',';
+      }
 
-    allergenes += allergene;
+      allergenes += allergene;
 
-    firstAllergene = false;
-  })
+      firstAllergene = false;
+    });
+  }
 
   if(allergenes.length > 0) {
     updatedMeal.allergenes = allergenes;

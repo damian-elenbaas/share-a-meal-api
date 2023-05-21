@@ -5,34 +5,6 @@ const chaiHttp = require('chai-http');
 const server = require('../../../app');
 const pool = require('../../utils/mysql-db');
 
-pool.getConnection((err, conn) => {
-  if(err) {
-    console.error(err);
-    process.exit();
-  }
-
-  conn.query('DELETE FROM user', (sqlError, sqlResults) => {
-    if(sqlError) {
-      console.error(sqlError);
-      process.exit();
-    }
-
-    conn.query(`INSERT INTO user VALUES 
-          (1,'Mariëtte','van den Dullemen',1,'m.vandullemen@server.nl','Secret123','','','',''),
-          (2,'John','Doe',1,'j.doe@server.com','Secret123','06 12425475','editor,guest','',''),
-          (3,'Herman','Huizinga',1,'h.huizinga@server.nl','Secret123','06-12345678','editor,guest','',''),
-          (4,'Marieke','Van Dam',0,'m.vandam@server.nl','Secret123','06-12345678','editor,guest','',''),
-          (5,'Henk','Tank',1,'h.tank@server.com','Secret123','06 12425495','editor,guest','','');`,
-      (sqlError, sqlResults) => {
-        if(sqlError) {
-          console.error(sqlError);
-          process.exit();
-        }
-      }
-    )
-  });
-});
-
 chai.should();
 chai.use(chaiHttp);
 
@@ -767,70 +739,514 @@ describe('UC-301', function() {
       });
   });
 
-  // it('TC-301-3 - Meal successfully added', (done) => {
-  //   chai
-  //     .request(server)
-  //     .post('/api/meal')
-  //     .set('Authorization', 'Bearer ' + token)
-  //     .send({
-  //       'name': 'Een test maaltijd',
-  //       'description': 'Een test maaltijd beschrijving',
-  //       'price': 2.00,
-  //       'maxAmountOfParticipants': 3,
-  //       'imageUrl': 'http://test.nl/bestand.jpg'
-  //     })
-  //     .end((err, res) => {
-  //       assert(err === null);
-  //       res.body.should.be.an('object');
-  //       res.body.should.has.property('status').to.be.equal(201);
-  //       res.body.should.has.property('message');
-  //       res.body.should.has.property('data');
-  //
-  //       let { data } = res.body;
-  //       data.should.be.an('object').not.to.be.empty;
-  //
-  //       data.should.has.property('id');
-  //       data.should.has.property('name');
-  //       data.should.has.property('description');
-  //       data.should.has.property('isActive');
-  //       data.should.has.property('isVega');
-  //       data.should.has.property('isVegan');
-  //       data.should.has.property('isToTakeHome');
-  //       data.should.has.property('dateTime');
-  //       data.should.has.property('maxAmountOfParticipants');
-  //       data.should.has.property('price');
-  //       data.should.has.property('imageUrl');
-  //       data.should.has.property('allergenes').to.be.an('array');
-  //       data.should.has.property('cook');
-  //
-  //       done();
-  //     });
-  // });
+  it('TC-301-3 - Meal successfully added', (done) => {
+    chai
+      .request(server)
+      .post('/api/meal')
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'description': 'Een test maaltijd beschrijving',
+        'price': 2.00,
+        'maxAmountOfParticipants': 3,
+        'imageUrl': 'http://test.nl/bestand.jpg'
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(201);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').not.to.be.empty;
+
+        data.should.has.property('id');
+        data.should.has.property('name');
+        data.should.has.property('description');
+        data.should.has.property('isActive');
+        data.should.has.property('isVega');
+        data.should.has.property('isVegan');
+        data.should.has.property('isToTakeHome');
+        data.should.has.property('dateTime');
+        data.should.has.property('maxAmountOfParticipants');
+        data.should.has.property('price');
+        data.should.has.property('imageUrl');
+        data.should.has.property('allergenes');
+        // data.should.has.property('cook').to.be.an('object');
+
+        // let { cook } = data;
+        //
+        // cook.should.has.property('id');
+        // cook.should.has.property('firstName');
+        // cook.should.has.property('lastName');
+        // cook.should.has.property('street');
+        // cook.should.has.property('city');
+        // cook.should.has.property('isActive');
+        // cook.should.has.property('emailAddress');
+        // cook.should.has.property('phoneNumber');
+        // cook.should.not.has.property('password');
+        // cook.should.not.has.property('token');
+        //
+        createdMealId = data.id;
+
+        done();
+      });
+  });
 });
 
-describe('UC-302 - Edit meal data', function() {
+describe('UC-302', function() {
+  it('TC-302-1 - Required field "name", "price" and/or "maxAmountOfParticipants" is missing', (done) => {
+    chai
+      .request(server)
+      .put(`/api/meal/${createdMealId}`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'maxAmountOfParticipants': 3,
+        // 'price': 3.00
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(400);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-302-2 - Not logged in', (done) => {
+    chai
+      .request(server)
+      .put(`/api/meal/${createdMealId}`)
+      // .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'maxAmountOfParticipants': 3,
+        'price': 3.00
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(401);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-302-3 - Not the owner of the meal', (done) => {
+    chai
+      .request(server)
+      .put(`/api/meal/1`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'maxAmountOfParticipants': 3,
+        'price': 3.00
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(403);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-302-4 - Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .put(`/api/meal/0`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'maxAmountOfParticipants': 3,
+        'price': 3.00
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-302-5 - Meal successfully updated', (done) => {
+    chai
+      .request(server)
+      .put(`/api/meal/${createdMealId}`)
+      .set('Authorization', 'Bearer ' + token)
+      .send({
+        'name': 'Een test maaltijd',
+        'maxAmountOfParticipants': 1,
+        'price': 3.00
+      })
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').not.to.be.empty;
+
+        data.should.has.property('id');
+        data.should.has.property('name');
+        data.should.has.property('description');
+        data.should.has.property('isActive');
+        data.should.has.property('isVega');
+        data.should.has.property('isVegan');
+        data.should.has.property('isToTakeHome');
+        data.should.has.property('dateTime');
+        data.should.has.property('maxAmountOfParticipants');
+        data.should.has.property('price');
+        data.should.has.property('imageUrl');
+        data.should.has.property('allergenes');
+
+        done();
+      });
+  });
 
 });
 
 describe('UC-303 - Get all meals', function() {
+  it('TC-303-1 - List of meals returned', (done) => {
+    chai
+      .request(server)
+      .get('/api/meal')
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
 
+        let { data } = res.body;
+        data.should.be.an('array');
+
+        data.forEach((meal) => {
+          meal.should.has.property('id');
+          meal.should.has.property('name');
+          meal.should.has.property('description');
+          meal.should.has.property('isActive');
+          meal.should.has.property('isVega');
+          meal.should.has.property('isVegan');
+          meal.should.has.property('isToTakeHome');
+          meal.should.has.property('dateTime');
+          meal.should.has.property('maxAmountOfParticipants');
+          meal.should.has.property('price');
+          meal.should.has.property('imageUrl');
+          meal.should.has.property('allergenes');
+        });
+        done();
+      });
+  });
 });
 
 describe('UC-304 - Get meal by ID', function() {
+  it('TC-304-1 - Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .get(`/api/meal/0`)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
 
-});
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
 
-describe('UC-305 - Delete meal', function() {
+        done();
+      });
+  });
 
+  it('TC-304-2 - Meal details received', (done) => {
+    chai
+      .request(server)
+      .get(`/api/meal/${createdMealId}`)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').not.to.be.empty;
+
+        data.should.has.property('id');
+        data.should.has.property('name');
+        data.should.has.property('description');
+        data.should.has.property('isActive');
+        data.should.has.property('isVega');
+        data.should.has.property('isVegan');
+        data.should.has.property('isToTakeHome');
+        data.should.has.property('dateTime');
+        data.should.has.property('maxAmountOfParticipants');
+        data.should.has.property('price');
+        data.should.has.property('imageUrl');
+        data.should.has.property('allergenes');
+
+        done();
+      });
+  });
 });
 
 describe('UC-401 - Participate on meal', function() {
+  it('TC-401-1 Not logged in', (done) => {
+    chai
+      .request(server)
+      .post(`/api/meal/${createdMealId}/participate`)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(401);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
 
-})
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-401-2 Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .post(`/api/meal/0/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-401-3 Successfully participated', (done) => {
+    chai
+      .request(server)
+      .post(`/api/meal/${createdMealId}/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').not.to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-401-4 Maximum participants reached', (done) => {
+    chai
+      .request(server)
+      .post(`/api/meal/${createdMealId}/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message')
+          .to.be.equal('Maximum aantal aanmeldingen is bereikt');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+});
 
 describe('UC-402 - Remove participation on meal', function() {
+  it('TC-402-1 Not logged in', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/${createdMealId}/participate`)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(401);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
 
-})
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-402-2 Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/0/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-402-3 Participation does not exist', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/1/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-402-4 Successfully removed participation', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/${createdMealId}/participate`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').not.to.be.empty;
+
+        done();
+      });
+  });
+});
+
+describe('UC-305', function() {
+  it('TC-305-1 - Not logged in', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/${createdMealId}`)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(401);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-305-2 - Not the owner of the data', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/1`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(403);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-305-3 - Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/0`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(404);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+
+  it('TC-305-4 - Meal does not exist', (done) => {
+    chai
+      .request(server)
+      .delete(`/api/meal/${createdMealId}`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object').to.be.empty;
+
+        done();
+      });
+  });
+});
 
 describe('UC-206', function () {
   it('TC-206-1 - User does not exist', (done) => {
@@ -906,7 +1322,7 @@ describe('UC-206', function () {
           .post('/api/login')
           .send({
             'emailAddress': 'm.vandullemen@server.nl',
-            'password': 'Secret123'
+            'password': 'Secret12'
           });
       })
       .then(res => {
