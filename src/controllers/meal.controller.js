@@ -145,6 +145,7 @@ meal.update = function (req, res) {
 
   let mealid = req.params.mealid;
   let payloadId = res.locals.decoded.id;
+  let updatedMeal = req.body;
 
   const validation = required.validate(req.body);
   if(validation.error) {
@@ -155,24 +156,47 @@ meal.update = function (req, res) {
     });
   }
 
+  if(updatedMeal.dateTime) {
+    updatedMeal.dateTime = new Date(updatedMeal.dateTime).toISOString().slice(0, 19).replace('T', ' ');
+  } 
+
+  if(updatedMeal.createDate) {
+    updatedMeal.createDate = new Date(updatedMeal.createDate).toISOString().slice(0, 19).replace('T', ' ');
+  }
+  
+  if(updatedMeal.updateDate) {
+    updatedMeal.updateDate = new Date(updatedMeal.updateDate).toISOString().slice(0, 19).replace('T', ' ');
+  }
+
+  let allergenes = '';
+  let firstAllergene = true;
+  updatedMeal.allergenes.forEach((allergene) => {
+    if(!firstAllergene) {
+      allergenes += ',';
+    }
+
+    allergenes += allergene;
+
+    firstAllergene = false;
+  })
+
+  if(allergenes.length > 0) {
+    updatedMeal.allergenes = allergenes;
+  }
+
   let sql = "UPDATE meal SET ";
   let fieldCount = 0;
-  Object.entries(req.body).forEach(([key, value]) => {
-    const keys = Object.entries(required.describe().keys);
-    keys.forEach(([field, props]) => {
-      if(field == key) {
-        if(fieldCount == 0) {
-          sql = sql + `${field} = ?`;
-        } else {
-          sql = sql + `, ${field} = ?`;
-        }
-        fieldCount = fieldCount + 1;
-      }
-    })
+  Object.entries(updatedMeal).forEach(([key, value]) => {
+    if(fieldCount == 0) {
+      sql = sql + `${key} = ?`;
+    } else {
+      sql = sql + `, ${key} = ?`;
+    }
+    fieldCount = fieldCount + 1;
   })
   sql = sql + " WHERE id = ?";
 
-  let values = Object.values(req.body);
+  let values = Object.values(updatedMeal);
   values.push(mealid);
 
   pool.getConnection((err, conn) => {
