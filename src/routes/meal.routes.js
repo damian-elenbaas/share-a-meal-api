@@ -8,12 +8,20 @@ router.use(express.json());
 
 router.post('/', auth.validateToken, meal.create);
 
-router.put('/:mealid', auth.validateToken, meal.update);
+router.put('/:mealId', auth.validateToken, meal.update);
 
 router.get('/', meal.getAll);
 
-router.get('/:mealid', meal.getById);
+router.get('/:mealId', meal.getById);
 
-router.delete('/:mealid', auth.validateToken, meal.delete);
+router.delete('/:mealId', auth.validateToken, meal.delete);
+
+router.post('/:mealId/participate', auth.validateToken, meal.participate);
+
+router.delete('/:mealId/participate', auth.validateToken, meal.removeParticipant);
+
+router.get('/:mealId/participants', auth.validateToken, meal.getParticipants);
+
+router.get('/:mealId/participants/:participantId', auth.validateToken, meal.getParticipantById);
 
 module.exports = router;

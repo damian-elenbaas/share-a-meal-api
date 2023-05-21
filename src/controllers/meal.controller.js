@@ -143,7 +143,7 @@ meal.update = function (req, res) {
     allergenes: joi.array().items(joi.string().valid('gluten', 'lactose', 'noten'))
   });
 
-  let mealid = req.params.mealid;
+  let mealId = req.params.mealId;
   let payloadId = res.locals.decoded.id;
   let updatedMeal = req.body;
 
@@ -197,7 +197,7 @@ meal.update = function (req, res) {
   sql = sql + " WHERE id = ?";
 
   let values = Object.values(updatedMeal);
-  values.push(mealid);
+  values.push(mealId);
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -209,7 +209,7 @@ meal.update = function (req, res) {
       });
     }
 
-    conn.query('SELECT * FROM meal WHERE id = ?', [mealid], (sqlError, sqlResults) => {
+    conn.query('SELECT * FROM meal WHERE id = ?', [mealId], (sqlError, sqlResults) => {
       if(sqlError) {
         return res.status(500).json({
           'status': 500,
@@ -247,7 +247,7 @@ meal.update = function (req, res) {
             });
           }
           conn.query(
-            'SELECT * FROM meal WHERE id = ?', [mealid], (sqlError, sqlResults) => {
+            'SELECT * FROM meal WHERE id = ?', [mealId], (sqlError, sqlResults) => {
               if(sqlError) {
                 return res.status(500).json({
                   'status': 500,
@@ -313,7 +313,7 @@ meal.getAll = function (req, res) {
 }
 
 meal.getById = function (req, res) {
-  let id = req.params.mealid;
+  let id = req.params.mealId;
 
   pool.getConnection((err, conn) => {
     if(err) {
@@ -361,11 +361,132 @@ meal.getById = function (req, res) {
 }
 
 meal.delete = function (req, res) {
-  res.status(200).json({
-    'status': 200,
+  res.status(404).json({
+    'status': 404,
     'message': 'Not implemented yet',
     'data': {}
-  })
+  });
+}
+
+meal.participate = function (req, res) {
+  let mealId = req.params.mealId;
+  let payloadId = res.locals.decoded.id;
+
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error(err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
+
+    conn.query('SELECT * FROM meal WHERE id = ?', [mealId], (sqlError, sqlResults) => {
+      if(sqlError) {
+        logger.error(sqlError);
+        return res.status(500).json({
+          'status': 500,
+          'message': 'Internal server error',
+          'data': {}
+        });
+      }
+
+      if(sqlResults.length == 0) {
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Meal not found',
+          'data': {}
+        });
+      }
+
+      let requestedMeal = sqlResults[0];
+
+      conn.query(
+        `SELECT COUNT(*) as 'count' FROM meal_participants_user WHERE mealId = ?`, 
+        [mealId],
+        (sqlError, sqlResults) => {
+          if(sqlError) {
+            logger.error(sqlError);
+            return res.status(500).json({
+              'status': 500,
+              'message': 'Internal server error',
+              'data': {}
+            });
+          }
+
+          if(sqlResults.length == 0) {
+            return res.status(500).json({
+              'status': 500,
+              'message': 'Internal server error',
+              'data': {}
+            });
+          }
+
+          if(sqlResults[0].count >= requestedMeal.maxAmountOfParticipants) {
+            return res.status(200).json({
+              'status': 200,
+              'message': 'Maximum aantal aanmeldingen is bereikt',
+              'data': {}
+            })
+          }
+
+          conn.query(
+            'INSERT INTO meal_participants_user (mealId, userId) VALUES (?, ?)', 
+            [mealId, payloadId],
+            (sqlError, sqlResults) => {
+              if(sqlError) {
+                if(sqlError.code == 'ER_DUP_ENTRY') {
+                  return res.status(200).json({
+                    'status': 200,
+                    'message': `User met ID ${payloadId} is aangemeld voor maaltijd met ID ${mealId}`,
+                    'data': {}
+                  })
+                }
+
+                logger.error(sqlError);
+                return res.status(500).json({
+                  'status': 500,
+                  'message': 'Internal server error',
+                  'data': {}
+                });
+              }
+
+              return res.status(200).json({
+                'status': 200,
+                'message': `User met ID ${payloadId} is aangemeld voor maaltijd met ID ${mealId}`,
+                'data': {}
+              })
+            }
+          )
+        })
+    });
+    pool.releaseConnection(conn);
+  });
+}
+
+meal.removeParticipant = function (req, res) {
+  res.status(404).json({
+    'status': 404,
+    'message': 'Not implemented yet',
+    'data': {}
+  });
+}
+
+meal.getParticipants = function (req, res) {
+  res.status(404).json({
+    'status': 404,
+    'message': 'Not implemented yet',
+    'data': {}
+  });
+}
+
+meal.getParticipantById = function (req, res) {
+  res.status(404).json({
+    'status': 404,
+    'message': 'Not implemented yet',
+    'data': {}
+  });
 }
 
 module.exports = meal;

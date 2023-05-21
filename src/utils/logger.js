@@ -1,6 +1,6 @@
 module.exports = {
   logger: require('tracer').colorConsole({
-    level: 'debug',
+    level: 'trace',
     dateformat: 'HH:MM:ss.L',
     format: '{{timestamp}} <{{title}}> {{message}} (in {{file}}:{{line}})'
   })
