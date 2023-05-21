@@ -517,7 +517,7 @@ meal.participate = function (req, res) {
               return res.status(200).json({
                 'status': 200,
                 'message': `User met ID ${payloadId} is aangemeld voor maaltijd met ID ${mealId}`,
-                'data': {}
+                'data': { mealId: mealId, userId: payloadId }
               })
             }
           )
