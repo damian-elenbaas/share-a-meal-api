@@ -20,18 +20,28 @@ With this API you can share meals with people to prevent foodwaste!
 
 ## Usage
 
-This Share A Meal has a few endpoints:
+This Share A Meal API has a few endpoints:
 
 **Login**
 - `[POST] /api/login` to login and get a JWT token
 
 **Users**
 - `[POST] /api/user` to create a new user
-- `[GET] /api/user` to get all users
-- `[GET] /api/user/:userId` to get user by id 
-- `[PUT] /api/user/:userId` to update user
-- `[DELETE] /api/user/:userId` to delete user by id
-- `[GET] /api/user/profile` to get your own profile
+- `[GET] /api/user` to get all users *(JWT required)*
+- `[GET] /api/user/:userId` to get user by id *(JWT required)*
+- `[PUT] /api/user/:userId` to update user *(JWT required)*
+- `[DELETE] /api/user/:userId` to delete user by id *(JWT required)*
+- `[GET] /api/user/profile` to get your own profile *(JWT required)*
 
 **Meals**
+- `[POST] /api/meal` to add a meal *(JWT required)*
+- `[GET] /api/meal` to get all meals, with `GET` parameters you can filter on existing fields 
+- `[GET] /api/meal/:mealId` to get a meal by id
+- `[PUT] /api/meal/:mealId` to update meal *(JWT required)*
+- `[DELETE] /api/meal/:mealId` to delete meal *(JWT required)*
 
+**Participations**
+- `[POST] /api/meal/:mealId/participate` to participate on a meal *(JWT required)*
+- `[DELETE] /api/meal/:mealId/participate` to remove participation on a meal *(JWT required)*
+- `[GET] /api/meal/:mealId/participants` to get all participants of a meal *(JWT required)*
+- `[GET] /api/meal/:mealId/participants/:participantId` to get details of a specific participant *(JWT required)*
