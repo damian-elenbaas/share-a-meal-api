@@ -131,6 +131,7 @@ meal.create = function (req, res) {
             mealInfo.isVega = (mealInfo.isVega === 1);
             mealInfo.isVegan = (mealInfo.isVegan === 1);
             mealInfo.isToTakeHome = (mealInfo.isToTakeHome === 1);
+            mealInfo.price = mealInfo.price / 1;
 
 
             return res.status(201).json({
