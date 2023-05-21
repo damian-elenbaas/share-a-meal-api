@@ -216,7 +216,8 @@ user.login = function (req, res) {
     password: joi.string()
      .min(8)
      .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/))
-     .required()
+     .required(),
+    emailAdress: joi.string()
   })
 
   let validation = loginSchema.validate(credentials);
