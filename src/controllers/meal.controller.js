@@ -419,7 +419,7 @@ meal.delete = function (req, res) {
 
             return res.status(200).json({
               'status': 200,
-              'message': 'Meal successfully deleted',
+              'message': `Maaltijd met ID ${mealId} is verwijderd`,
               'data': {}
             });
           }
@@ -502,7 +502,7 @@ meal.participate = function (req, res) {
                   return res.status(200).json({
                     'status': 200,
                     'message': `User met ID ${payloadId} is aangemeld voor maaltijd met ID ${mealId}`,
-                    'data': {}
+                    'data': { mealId: mealId, userId: payloadId }
                   })
                 }
 
@@ -596,7 +596,7 @@ meal.removeParticipant = function (req, res) {
               return res.status(200).json({
                 'status': 200,
                 'message': `User met ID ${payloadId} is afgemeld voor maaltijd met ID ${mealId}`,
-                'data': {}
+                'data': { mealId: mealId, userId: payloadId }
               })
             }
           )
