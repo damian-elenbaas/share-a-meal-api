@@ -1094,6 +1094,62 @@ describe('UC-401 - Participate on meal', function() {
   });
 });
 
+describe('UC-403', function() {
+  it('TC-403-1 - Get all participants of meal', (done) => {
+    chai
+      .request(server)
+      .get(`/api/meal/${createdMealId}/participants`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object');
+        data.should.has.property('participants');
+        data.participants.forEach((participantId) => {
+          participantId.should.be.an('number'); 
+        });
+
+        done();
+      });
+  });
+});
+
+describe('UC-404', function() {
+  it('TC-404-1 - Get details of participant', (done) => {
+    chai
+      .request(server)
+      .get(`/api/meal/${createdMealId}/participants/${createdUserId}`)
+      .set('Authorization', 'Bearer ' + token)
+      .end((err, res) => {
+        assert(err === null);
+        res.body.should.be.an('object');
+        res.body.should.has.property('status').to.be.equal(200);
+        res.body.should.has.property('message');
+        res.body.should.has.property('data');
+
+        let { data } = res.body;
+        data.should.be.an('object');
+        data.should.has.property('id');
+        data.should.has.property('firstName');
+        data.should.has.property('lastName');
+        data.should.has.property('street');
+        data.should.has.property('city');
+        data.should.has.property('isActive');
+        data.should.has.property('emailAddress');
+        data.should.has.property('phoneNumber');
+        data.should.not.has.property('password');
+        data.should.not.has.property('token');
+
+        done();
+      });
+  });
+});
+
 describe('UC-402 - Remove participation on meal', function() {
   it('TC-402-1 Not logged in', (done) => {
     chai
