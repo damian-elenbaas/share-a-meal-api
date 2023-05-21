@@ -119,6 +119,7 @@ meal.create = function (req, res) {
         })
       }
     )
+    pool.releaseConnection(conn);
   });
 }
 
@@ -425,6 +426,7 @@ meal.delete = function (req, res) {
         );
       }
     );
+    pool.releaseConnection(conn);
   });
 }
 
@@ -773,6 +775,7 @@ meal.getParticipantById = function (req, res) {
         );
       }
     );
+    pool.releaseConnection(conn);
   });
 }
 
