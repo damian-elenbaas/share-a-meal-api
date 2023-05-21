@@ -222,6 +222,7 @@ user.login = function (req, res) {
   let validation = loginSchema.validate(credentials);
   if(validation.error) {
     logger.debug('Invalid body');
+    logger.debug(validation.error.details[0].message);
     return res.status(400).json({
       'status': 400,
       'message': validation.error.details[0].message,

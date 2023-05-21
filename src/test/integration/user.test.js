@@ -18,11 +18,11 @@ pool.getConnection((err, conn) => {
     }
 
     conn.query(`INSERT INTO user VALUES 
-          (1,'Mariëtte','van den Dullemen',1,'m.vandullemen@server.nl','secret','','','',''),
-          (2,'John','Doe',1,'j.doe@server.com','secret','06 12425475','editor,guest','',''),
-          (3,'Herman','Huizinga',1,'h.huizinga@server.nl','secret','06-12345678','editor,guest','',''),
-          (4,'Marieke','Van Dam',0,'m.vandam@server.nl','secret','06-12345678','editor,guest','',''),
-          (5,'Henk','Tank',1,'h.tank@server.com','secret','06 12425495','editor,guest','','');`,
+          (1,'Mariëtte','van den Dullemen',1,'m.vandullemen@server.nl','Secret123','','','',''),
+          (2,'John','Doe',1,'j.doe@server.com','Secret123','06 12425475','editor,guest','',''),
+          (3,'Herman','Huizinga',1,'h.huizinga@server.nl','Secret123','06-12345678','editor,guest','',''),
+          (4,'Marieke','Van Dam',0,'m.vandam@server.nl','Secret123','06-12345678','editor,guest','',''),
+          (5,'Henk','Tank',1,'h.tank@server.com','Secret123','06 12425495','editor,guest','','');`,
       (sqlError, sqlResults) => {
         if(sqlError) {
           console.error(sqlError);
@@ -218,7 +218,7 @@ describe('UC-202', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         assert(res.body.data.token);
@@ -249,7 +249,7 @@ describe('UC-203', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -287,7 +287,7 @@ describe('UC-204', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -311,7 +311,7 @@ describe('UC-204', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -350,7 +350,7 @@ describe('UC-205', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -377,7 +377,7 @@ describe('UC-205', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -405,7 +405,7 @@ describe('UC-205', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai
@@ -435,7 +435,7 @@ describe('UC-206', function () {
       .post('/api/login')
       .send({
         'emailAddress': 'm.vandullemen@server.nl',
-        'password': 'secret'
+        'password': 'Secret123'
       })
       .end((err, res) => {
         chai.request(server)
@@ -501,7 +501,7 @@ describe('UC-206', function () {
           .post('/api/login')
           .send({
             'emailAddress': 'm.vandullemen@server.nl',
-            'password': 'secret'
+            'password': 'Secret123'
           });
       })
       .then(res => {
