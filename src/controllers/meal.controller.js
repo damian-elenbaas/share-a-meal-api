@@ -545,18 +545,174 @@ meal.removeParticipant = function (req, res) {
 }
 
 meal.getParticipants = function (req, res) {
-  res.status(404).json({
-    'status': 404,
-    'message': 'Not implemented yet',
-    'data': {}
+  let mealId = req.params.mealId;
+  let payloadId = res.locals.decoded.id;
+
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error(err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
+
+    conn.query(
+      'SELECT * FROM meal WHERE id = ?',
+      [mealId],
+      (sqlError, sqlResults) => {
+        if(sqlError) {
+          logger.error(sqlError);
+          return res.status(500).json({
+            'status': 500,
+            'message': 'Internal server error',
+            'data': {}
+          });
+        }
+
+        if(sqlResults.length == 0) {
+          return res.status(404).json({
+            'status': 404,
+            'message': 'Meal not found',
+            'data': {}
+          });
+        }
+
+        if(sqlResults[0].cookId !== payloadId) {
+          return res.status(401).json({
+            'status': 401,
+            'message': 'You are not the owner of the meal',
+            'data': {}
+          });
+        }
+        conn.query(
+          'SELECT * FROM meal_participants_user WHERE mealId = ?',
+          [mealId],
+          (sqlError, sqlResults) => {
+            if(sqlError) {
+              logger.error(sqlError);
+              return res.status(500).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              });
+            }
+
+            let users = [];
+            sqlResults.forEach((row) => users.push(row.userId));
+            return res.status(200).json({
+              'status': 200,
+              'message': 'All participants',
+              'data': { participants: users } 
+            });
+          }
+        );
+      }
+    );
+    pool.releaseConnection(conn);
   });
 }
 
 meal.getParticipantById = function (req, res) {
-  res.status(404).json({
-    'status': 404,
-    'message': 'Not implemented yet',
-    'data': {}
+  let mealId = req.params.mealId;
+  let userId = req.params.participantId;
+  let payloadId = res.locals.decoded.id;
+
+  pool.getConnection((err, conn) => {
+    if(err) {
+      logger.error(err);
+      return res.status(500).json({
+        'status': 500,
+        'message': 'Internal server error',
+        'data': {}
+      });
+    }
+
+    conn.query(
+      'SELECT * FROM meal WHERE id = ?',
+      [mealId],
+      (sqlError, sqlResults) => {
+        if(sqlError) {
+          logger.error(sqlError);
+          return res.status(500).json({
+            'status': 500,
+            'message': 'Internal server error',
+            'data': {}
+          });
+        }
+
+        if(sqlResults.length == 0) {
+          return res.status(404).json({
+            'status': 404,
+            'message': 'Meal not found',
+            'data': {}
+          });
+        }
+
+        if(sqlResults[0].cookId !== payloadId) {
+          return res.status(401).json({
+            'status': 401,
+            'message': 'You are not the owner of the meal',
+            'data': {}
+          });
+        }
+
+        conn.query(
+          'SELECT * FROM meal_participants_user WHERE mealId = ? AND userId = ?',
+          [mealId, userId],
+          (sqlError, sqlResults) => {
+            if(sqlError) {
+              logger.error(sqlError);
+              return res.status(500).json({
+                'status': 500,
+                'message': 'Internal server error',
+                'data': {}
+              });
+            }
+
+            if(sqlResults.length == 0) {
+              return res.status(404).json({
+                'status': 404,
+                'message': 'Participant not found',
+                'data': {}
+              });
+            }
+
+            conn.query(
+              'SELECT * FROM user WHERE id = ?',
+              [userId],
+              (sqlError, sqlResults) => {
+                if(sqlError) {
+                  logger.error(sqlError);
+                  return res.status(500).json({
+                    'status': 500,
+                    'message': 'Internal server error',
+                    'data': {}
+                  });
+                }
+
+                if(sqlResults.length == 0) {
+                  return res.status(404).json({
+                    'status': 404,
+                    'message': 'Participant not found',
+                    'data': {}
+                  });
+                }
+
+                let { password, ...userInfo } = sqlResults[0];
+
+                return res.status(200).json({
+                  'status': 200,
+                  'message': 'Participant found',
+                  'data': userInfo
+                });
+              }
+            );
+          }
+        );
+      }
+    );
   });
 }
 
