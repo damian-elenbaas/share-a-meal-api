@@ -211,14 +211,20 @@ user.login = function (req, res) {
 
   let credentials = req.body;
 
-  logger.debug(`Credentials: ${credentials}`);
-  if(!(credentials.hasOwnProperty('emailAddress') 
-    && credentials.hasOwnProperty('password'))
-  ) {
+  const loginSchema = joi.object({
+    emailAddress: joi.string().required(),
+    password: joi.string()
+     .min(8)
+     .pattern(new RegExp(/^(?=.*[A-Z])(?=.*[0-9]).+$/))
+     .required()
+  })
+
+  let validation = loginSchema.validate(credentials);
+  if(validation.error) {
     logger.debug('Invalid body');
     return res.status(400).json({
       'status': 400,
-      'message': 'Invalid body',
+      'message': validation.error.details[0].message,
       'data': {}
     });
   }
@@ -272,9 +278,9 @@ user.login = function (req, res) {
           })
         });
       } else {
-        return res.status(400).json({
-          'status': 400,
-          'message': 'Niet valide wachtwoord',
+        return res.status(404).json({
+          'status': 404,
+          'message': 'Gebruiker bestaat niet',
           'data': {}
         });
       }
